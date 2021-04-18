@@ -1,58 +1,90 @@
+import cython
+%load_ext cython
+
+%%cython
+cimport cython 
 import numpy as np
+cimport numpy as np
 from stl import mesh
 
-def Akeine_Moller_triangle_cube_intersection_test(cube_origin, cube_r, triangle_p1, triangle_p2, triangle_p3, triangle_normal):
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.nonecheck(False)
+@cython.cdivision(True)
+cdef np.ndarray[np.double_t,ndim=1] find_min_max(double x0, double x1, double x2):
+    cdef double p_min = x0
+    cdef double p_max = x0
+        
+    if x1 < p_min:
+        p_min = x1
+    if x1 > p_max:
+        p_max = x1
+    if x2 < p_min:
+        p_min = x2
+    if x2 > p_max:
+        p_max = x2
+            
+    cdef np.ndarray[np.double_t,ndim=1] p = np.array([p_min, p_max], dtype=np.double)
+    return p
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.nonecheck(False)
+@cython.cdivision(True)
+cpdef int plane_cube_intersection(np.ndarray[np.double_t,ndim=1] vert, double cube_r, np.ndarray[np.double_t,ndim=1] normal):
+    cdef np.ndarray[np.double_t,ndim=1] vmin = np.array([0, 0, 0], dtype=np.double)
+    cdef np.ndarray[np.double_t,ndim=1] vmax = np.array([0, 0, 0], dtype=np.double)
+    cdef int q
+    for q in range(3):
+        v = vert[q]
+        if normal[q] > 0:
+            vmin[q] = -cube_r - v
+            vmax[q] = cube_r - v
+        else:
+            vmin[q] = cube_r - v
+            vmax[q] = -cube_r - v
+    if np.dot(normal, vmin) > 0:
+        return 0
+    if np.dot(normal, vmax) >= 0:
+        return 1
+        
+    return 0
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.nonecheck(False)
+@cython.cdivision(True)
+cpdef int Akeine_Moller_triangle_cube_intersection_test(np.ndarray[np.double_t,ndim=1] cube_origin, double cube_r, np.ndarray[np.double_t,ndim=1] triangle_p1,
+                                                         np.ndarray[np.double_t,ndim=1] triangle_p2, np.ndarray[np.double_t,ndim=1] triangle_p3, np.ndarray[np.double_t,ndim=1] triangle_normal):
     ### Test Tomasa Akeine-Mollera na przeciecie trojkata z kostka        ###
     ### https://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code ###
     ### Przepisane z C do Python                                          ###
-    
-    def find_min_max(x0, x1, x2):
-        p_min = x0
-        p_max = x0
         
-        if x1 < p_min:
-            p_min = x1
-        if x1 > p_max:
-            p_max = x1
-        if x2 < p_min:
-            p_min = x2
-        if x2 > p_max:
-            p_max = x2
-            
-        return p_min, p_max
-    
-    def plane_cube_intersection(vert):
-        vmin = []
-        vmax = []
-        for q in range(3):
-            v = vert[q]
-            if triangle_normal[q] > 0:
-                vmin.append(-cube_r - v)
-                vmax.append(cube_r - v)
-            else:
-                vmin.append(cube_r - v)
-                vmax.append(-cube_r - v)
-        if np.dot(triangle_normal, vmin) > 0:
-            return False
-        if np.dot(triangle_normal, vmax) >= 0:
-            return True
+    cdef np.ndarray[np.double_t,ndim=1] v0 = triangle_p1 - cube_origin
+    cdef np.ndarray[np.double_t,ndim=1] v1 = triangle_p2 - cube_origin
+    cdef np.ndarray[np.double_t,ndim=1] v2 = triangle_p3 - cube_origin
         
-        return False
-
-        
-    v0 = triangle_p1 - cube_origin
-    v1 = triangle_p2 - cube_origin
-    v2 = triangle_p3 - cube_origin
-        
-    e0 = v1 - v0
-    e1 = v2 - v1
-    e2 = v0 - v2
+    cdef np.ndarray[np.double_t,ndim=1] e0 = v1 - v0
+    cdef np.ndarray[np.double_t,ndim=1] e1 = v2 - v1
+    cdef np.ndarray[np.double_t,ndim=1] e2 = v0 - v2
     
     ###### Bullet 3 #####
     
-    fe0 = np.abs(e0)
-    fe1 = np.abs(e1)
-    fe2 = np.abs(e2)
+    cdef np.ndarray[np.double_t,ndim=1] fe0 = np.abs(e0)
+    cdef np.ndarray[np.double_t,ndim=1] fe1 = np.abs(e1)
+    cdef np.ndarray[np.double_t,ndim=1] fe2 = np.abs(e2)
+
+    cdef double p0
+    cdef double p1
+    cdef double p2
+
+    cdef double p_min
+    cdef double p_max
+
+    cdef np.ndarray[np.double_t,ndim=1] p
+
+    cdef double rad
         
     #### Test 1 ####
         
@@ -67,7 +99,7 @@ def Akeine_Moller_triangle_cube_intersection_test(cube_origin, cube_r, triangle_
         p_max = p0
     rad = (fe0[2] + fe0[1])*cube_r
     if p_min > rad or p_max < -rad:
-        return False
+        return 0
   
     #### Test 2 ####
         
@@ -82,7 +114,7 @@ def Akeine_Moller_triangle_cube_intersection_test(cube_origin, cube_r, triangle_
         p_max = p0
     rad = (fe0[2] + fe0[0])*cube_r
     if p_min > rad or p_max < -rad:
-        return False
+        return 0
 
     #### Test 3 ####
         
@@ -97,7 +129,7 @@ def Akeine_Moller_triangle_cube_intersection_test(cube_origin, cube_r, triangle_
         p_max = p2
     rad = (fe0[1] + fe0[0])*cube_r
     if p_min > rad or p_max < -rad:
-        return False
+        return 0
 
     #### Test 4 ####
         
@@ -112,7 +144,7 @@ def Akeine_Moller_triangle_cube_intersection_test(cube_origin, cube_r, triangle_
         p_max = p0
     rad = (fe1[2] + fe1[1])*cube_r
     if p_min > rad or p_max < -rad:
-        return False
+        return 0
 
     #### Test 5 ####
         
@@ -127,7 +159,7 @@ def Akeine_Moller_triangle_cube_intersection_test(cube_origin, cube_r, triangle_
         p_max = p0
     rad = (fe1[2] + fe1[0])*cube_r
     if p_min > rad or p_max < -rad:
-        return False
+        return 0
 
     #### Test 6 ####
         
@@ -142,7 +174,7 @@ def Akeine_Moller_triangle_cube_intersection_test(cube_origin, cube_r, triangle_
         p_max = p0
     rad = (fe1[1] + fe1[0])*cube_r
     if p_min > rad or p_max < -rad:
-        return False
+        return 0
 
     #### Test 7 ####
         
@@ -157,7 +189,7 @@ def Akeine_Moller_triangle_cube_intersection_test(cube_origin, cube_r, triangle_
         p_max = p0
     rad = (fe2[2] + fe2[1])*cube_r
     if p_min > rad or p_max < -rad:
-        return False
+        return 0
 
     #### Test 8 ####
         
@@ -172,7 +204,7 @@ def Akeine_Moller_triangle_cube_intersection_test(cube_origin, cube_r, triangle_
         p_max = p0
     rad = (fe2[2] + fe2[0])*cube_r
     if p_min > rad or p_max < -rad:
-        return False
+        return 0
 
     #### Test 9 ####
         
@@ -187,39 +219,45 @@ def Akeine_Moller_triangle_cube_intersection_test(cube_origin, cube_r, triangle_
         p_max = p2
     rad = (fe2[1] + fe2[0])*cube_r
     if p_min > rad or p_max < -rad:
-        return False
+        return 0
 
     ##### Bullet 2 ######
     
     ### Test 10 ### 
 
-    p_min, p_max = find_min_max(v0[0], v1[0], v2[0])
+    p = find_min_max(v0[0], v1[0], v2[0])
+    p_min = p[0]
+    p_max = p[1]
     
     if p_min > cube_r or p_max < -cube_r:
-        return False
+        return 0
 
     ### Test 11 ###
     
-    p_min, p_max = find_min_max(v0[1], v1[1], v2[1])
+    p = find_min_max(v0[1], v1[1], v2[1])
+    p_min = p[0]
+    p_max = p[1]
     
     if p_min > cube_r or p_max < -cube_r:
-        return False
+        return 0
 
     ### Test 12 ###
     
-    p_min, p_max = find_min_max(v0[2], v1[2], v2[2])
+    p = find_min_max(v0[2], v1[2], v2[2])
+    p_min = p[0]
+    p_max = p[1]
     
     if p_min > cube_r or p_max < -cube_r:
-        return False
+        return 0
 
     ##### Bullet 1 ######
     
     ### Test 13 ###
     
-    if not plane_cube_intersection(v0):
-        return False
+    if not plane_cube_intersection(v0, cube_r, triangle_normal):
+        return 0
 
-    return True
+    return 1
 
 class Cube:
             
@@ -228,10 +266,10 @@ class Cube:
         self.r = r        
         
     def intersects_triangle(self, triangle_idx, triangles_mesh):
-        triangle_p1 = triangles_mesh.v0[triangle_idx]
-        triangle_p2 = triangles_mesh.v1[triangle_idx]
-        triangle_p3 = triangles_mesh.v2[triangle_idx]
-        triangle_normal = triangles_mesh.normals[triangle_idx]
+        triangle_p1 = triangles_mesh.v0[triangle_idx].astype(np.double)
+        triangle_p2 = triangles_mesh.v1[triangle_idx].astype(np.double)
+        triangle_p3 = triangles_mesh.v2[triangle_idx].astype(np.double)
+        triangle_normal = triangles_mesh.normals[triangle_idx].astype(np.double)
         return Akeine_Moller_triangle_cube_intersection_test(self.origin, self.r,
                                                              triangle_p1, triangle_p2, triangle_p3, triangle_normal)
     
@@ -349,5 +387,6 @@ bunny_cube = Cube(bunny_origin, bunny_r)
 octree = Octree(bunny_cube, maximal_leaf_size, maximal_tree_height, bunny_mesh)
 
 octree.build() # Przy tych danych budowa trwa okolo 4 min
+# Cython przyspieszyl budowe o rekordowe 5 sekund xDD
 
 print(octree)
