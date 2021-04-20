@@ -2,15 +2,12 @@ import cython
 %load_ext cython
 
 %%cython
+#cython: boundscheck=False, wraparound=False, initializedcheck=False, cdivision=True
 cimport cython 
 import numpy as np
 cimport numpy as np
 from stl import mesh
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-@cython.cdivision(True)
 cdef np.ndarray[np.double_t,ndim=1] find_min_max(double x0, double x1, double x2):
     cdef double p_min = x0
     cdef double p_max = x0
@@ -27,11 +24,6 @@ cdef np.ndarray[np.double_t,ndim=1] find_min_max(double x0, double x1, double x2
     cdef np.ndarray[np.double_t,ndim=1] p = np.array([p_min, p_max], dtype=np.double)
     return p
 
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-@cython.cdivision(True)
 cpdef int plane_cube_intersection(np.ndarray[np.double_t,ndim=1] vert, double cube_r, np.ndarray[np.double_t,ndim=1] normal):
     cdef np.ndarray[np.double_t,ndim=1] vmin = np.array([0, 0, 0], dtype=np.double)
     cdef np.ndarray[np.double_t,ndim=1] vmax = np.array([0, 0, 0], dtype=np.double)
@@ -51,10 +43,6 @@ cpdef int plane_cube_intersection(np.ndarray[np.double_t,ndim=1] vert, double cu
         
     return 0
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-@cython.cdivision(True)
 cpdef int Akeine_Moller_triangle_cube_intersection_test(np.ndarray[np.double_t,ndim=1] cube_origin, double cube_r, np.ndarray[np.double_t,ndim=1] triangle_p1,
                                                          np.ndarray[np.double_t,ndim=1] triangle_p2, np.ndarray[np.double_t,ndim=1] triangle_p3, np.ndarray[np.double_t,ndim=1] triangle_normal):
     ### Test Tomasa Akeine-Mollera na przeciecie trojkata z kostka        ###
@@ -259,6 +247,7 @@ cpdef int Akeine_Moller_triangle_cube_intersection_test(np.ndarray[np.double_t,n
 
     return 1
 
+
 cdef class Cube:
     cdef public:
         origin
@@ -268,8 +257,10 @@ cdef class Cube:
         self.origin = origin
         self.r = r  
 
-    cpdef int intersects_triangle(self, int triangle_idx, np.ndarray[np.double_t,ndim=2] triangles_mesh_v0, np.ndarray[np.double_t,ndim=2] triangles_mesh_v1,
-                                np.ndarray[np.double_t,ndim=2] triangles_mesh_v2, np.ndarray[np.double_t,ndim=2] triangles_mesh_normals):
+    cpdef int intersects_triangle(self, int triangle_idx, np.ndarray[np.double_t,ndim=2] triangles_mesh_v0,
+                                  np.ndarray[np.double_t,ndim=2] triangles_mesh_v1,
+                                  np.ndarray[np.double_t,ndim=2] triangles_mesh_v2,
+                                  np.ndarray[np.double_t,ndim=2] triangles_mesh_normals):
         cdef np.ndarray[np.double_t,ndim=1] triangle_p1 = triangles_mesh_v0[triangle_idx]
         cdef np.ndarray[np.double_t,ndim=1] triangle_p2 = triangles_mesh_v1[triangle_idx]
         cdef np.ndarray[np.double_t,ndim=1] triangle_p3 = triangles_mesh_v2[triangle_idx]
@@ -281,6 +272,9 @@ cdef class Cube:
         cdef double new_cube_r = self.r/2
         cdef np.ndarray[np.double_t,ndim=1] new_cube_origin = self.origin + (i*new_cube_r, j*new_cube_r, k*new_cube_r)
         return Cube(new_cube_origin, new_cube_r)
+
+    cdef np.ndarray[np.npy_bool,ndim=1] contains_particles(self, np.ndarray[np.double_t,ndim=2] particles):
+         return np.sum((self.origin - self.r <= particles) * (particles <= self.origin + self.r), axis=1) == 3
 
     def __repr__(self):
         return 'Origin: {}, r = {}'.format(self.origin, self.r)
@@ -296,29 +290,28 @@ cdef class Node:
         list subcubes_node_exists
 
     def __cinit__(self, Cube cube, int level):  
-        #self.triangles = np.zeros((40,), dtype=np.int32) - 1
         self.triangles = []
         self.children = []
         self.level = level
         self.cube = cube
         self.subcubes = []
         self.subcubes_node_exists = []
-        #self.subcubes_node_exists = np.zeros((8,), dtype=np.int32) - 1
 
     cdef int is_leaf(self):
         return not self.children
 
     cdef int is_full(self, int max_leaf_size):
-        return len(self.triangles) == max_leaf_size
-          #return len(self.triangles) - np.count_nonzero(self.triangles+1 == 0) == max_leaf_size
+        return len(self.triangles) >= max_leaf_size
 
     cdef Node add_child(self, Cube cube):
         cdef Node child = Node(cube, self.level+1)
         self.children.append(child)
         return child
 
-    cdef void split(self, np.ndarray[np.double_t,ndim=2] triangles_mesh_v0, np.ndarray[np.double_t,ndim=2] triangles_mesh_v1,
-              np.ndarray[np.double_t,ndim=2] triangles_mesh_v2, np.ndarray[np.double_t,ndim=2] triangles_mesh_normals):
+    cdef void split(self, np.ndarray[np.double_t,ndim=2] triangles_mesh_v0,
+                    np.ndarray[np.double_t,ndim=2] triangles_mesh_v1,
+                    np.ndarray[np.double_t,ndim=2] triangles_mesh_v2,
+                    np.ndarray[np.double_t,ndim=2] triangles_mesh_normals):
         cdef int i
         cdef int j
         cdef int k
@@ -333,7 +326,8 @@ cdef class Node:
                     self.subcubes.append(curr_subcube)              
                     new_node_exists = 0
                     for triangle_idx in self.triangles:  
-                        if curr_subcube.intersects_triangle(triangle_idx, triangles_mesh_v0, triangles_mesh_v1, triangles_mesh_v2, triangles_mesh_normals):
+                        if curr_subcube.intersects_triangle(triangle_idx, triangles_mesh_v0,
+                                                            triangles_mesh_v1, triangles_mesh_v2, triangles_mesh_normals):
                             if not new_node_exists:
                                 new_node = self.add_child(curr_subcube)
                                 new_node_exists = 1
@@ -356,6 +350,7 @@ cdef class Octree:
         Node root
         int height
         int max_height
+        int real_max_leaf_size
         int max_leaf_size
         triangles_mesh_v0
         triangles_mesh_v1
@@ -367,6 +362,7 @@ cdef class Octree:
         self.height = 1
         self.max_height = max_height
         self.max_leaf_size = max_leaf_size
+        self.real_max_leaf_size = max_leaf_size
         self.triangles_mesh_v0 = triangles_mesh.v0.astype(np.double)
         self.triangles_mesh_v1 = triangles_mesh.v1.astype(np.double)
         self.triangles_mesh_v2 = triangles_mesh.v2.astype(np.double)
@@ -376,7 +372,8 @@ cdef class Octree:
         cdef int subcube_idx
         cdef Node new_node
         for subcube_idx in range(len(node.subcubes)):
-            if node.subcubes[subcube_idx].intersects_triangle(triangle_idx, self.triangles_mesh_v0, self.triangles_mesh_v1, self.triangles_mesh_v2, self.triangles_mesh_normals):
+            if node.subcubes[subcube_idx].intersects_triangle(triangle_idx, self.triangles_mesh_v0, self.triangles_mesh_v1,
+                                                              self.triangles_mesh_v2, self.triangles_mesh_normals):
                 if node.subcubes_node_exists[subcube_idx] > -1:
                     self.insert(triangle_idx, node.children[node.subcubes_node_exists[subcube_idx]])
                 else:
@@ -394,11 +391,16 @@ cdef class Octree:
         elif not node.is_leaf():
             self.add_triangle_to_not_leaf(node, triangle_idx)
                     
-        elif node.is_full(self.max_leaf_size) and not node.level == self.max_height:
-            node.split(self.triangles_mesh_v0, self.triangles_mesh_v1, self.triangles_mesh_v2, self.triangles_mesh_normals)
-            if node.level == self.height:
-                self.height += 1
-            self.insert(triangle_idx, node)
+        elif node.is_full(self.max_leaf_size):
+            if not node.level == self.max_height:
+                node.split(self.triangles_mesh_v0, self.triangles_mesh_v1, self.triangles_mesh_v2, self.triangles_mesh_normals)
+                if node.level == self.height:
+                    self.height += 1
+                self.insert(triangle_idx, node)
+            else:
+                node.triangles.append(triangle_idx)
+                if len(node.triangles) > self.real_max_leaf_size:
+                    self.real_max_leaf_size += 1
             
         else:
             node.triangles.append(triangle_idx)
@@ -407,21 +409,39 @@ cdef class Octree:
         cdef int triangle_idx
         for triangle_idx in range(len(self.triangles_mesh_v0)):
             self.insert(triangle_idx)
-            
+
+    cdef np.ndarray[np.int32_t,ndim=2] for_search(self, np.ndarray[np.double_t,ndim=2] particles,
+                                              np.ndarray[np.int32_t,ndim=2] triangles, Node node):
+        if node.is_leaf():
+            triangles[:,:len(node.triangles)] = np.array(node.triangles).astype(np.int)
+            return triangles
+        cdef Node child
+        cdef np.ndarray[np.npy_bool,ndim=1] particles_inside
+        for child in node.children:
+            particles_inside = child.cube.contains_particles(particles)
+            if np.sum(particles_inside) > 0:
+                triangles[particles_inside] = self.for_search(particles[particles_inside], triangles[particles_inside], child)
+        return triangles
+
+    cpdef np.ndarray[np.int32_t,ndim=2] search(self, np.ndarray[np.double_t,ndim=2] particles):
+        cdef int row_size_of_triangles = particles.shape[0]
+        cdef int column_size_of_triangles = self.real_max_leaf_size
+        cdef np.ndarray[np.int32_t,ndim=2] triangles = np.zeros((row_size_of_triangles, column_size_of_triangles), dtype=np.int32) - 1
+        cdef np.ndarray[np.npy_bool,ndim=1] particles_inside = self.root.cube.contains_particles(particles)
+        return self.for_search(particles[particles_inside], triangles[particles_inside], self.root)
+
     def __repr__(self):
         return 'Height = {}'.format(self.height) + chr(10) + repr(self.root)
 
 
-# Bunny settings
-bunny_origin = np.array([30, 30, 30], dtype=np.double)
-bunny_r = 90
-maximal_leaf_size = 10 #6
-maximal_tree_height = 10 #10
-bunny_mesh = mesh.Mesh.from_file('data\Stanford_Bunny_sample.stl')
-
-bunny_cube = Cube(bunny_origin, bunny_r)
-octree = Octree(bunny_cube, maximal_leaf_size, maximal_tree_height, bunny_mesh)
-
-octree.build()
-
-print(octree)
+def convert_found_triangles(to_convert):
+    converted_array = np.zeros((to_convert.shape[0], 2), dtype=object)
+    converted_array[:,0] = np.arange(to_convert.shape[0])
+    indices_containing_triangles = np.sum(to_convert > -1, axis=1) > 0
+    new_to_convert = to_convert.copy()[indices_containing_triangles]
+    converted_array = converted_array[indices_containing_triangles]
+    triangles_list = []
+    for i in range(new_to_convert.shape[0]):
+        triangles_list.append(list(new_to_convert[i,:][new_to_convert[i,:] > -1]))
+    converted_array[:,1] = triangles_list
+    return converted_array
