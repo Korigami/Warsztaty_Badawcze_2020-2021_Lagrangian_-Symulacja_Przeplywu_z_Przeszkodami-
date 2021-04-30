@@ -23,29 +23,9 @@ class vtkTimerCallback():
             iren = obj
             iren.GetRenderWindow().Render()
         self.timer_count += 1
-
-def set_window(window, renderer, size = 500):
-        window.AddRenderer(renderer)
-        window.SetSize(size,size)
     
-def set_interactor(interactor, window, refresh_rate, actors_transformed, Coords, particles_number):
-    interactor.SetRenderWindow(window)
-    interactor.Initialize()
-    interactor.CreateRepeatingTimer(int(1/refresh_rate))
 
-    # add particles
-    for i in range(particles_number):
-        interactor.AddObserver("TimerEvent", partial(actors_transformed[i].execute, param=Coords[i,:,:]))
-
-    #timerId = interactor.CreateRepeatingTimer(100) # ???
-    #window.Render()
-
-def set_camera(cam, position = (5,5,1000), zoom = 0.01):
-    cam.SetPosition(position[0],position[1],position[2])
-    cam.ParallelProjectionOn()
-    cam.Zoom(zoom)
-
-def add_stl_object(path_to_stl,renderer, colors):
+def add_stl_object(path_to_stl, renderer, colors):
     reader = vtk.vtkSTLReader()
     reader.SetFileName(path_to_stl)
 
@@ -76,17 +56,38 @@ def add_paricles(Coords,renderer,particles_number, colors):
 def prepare_animation(renderer, window, interactor, Coords, particles_number, refresh_rate, path_to_stl):
     colors = vtk.vtkNamedColors()
     
+    size = 1000
+    window.SetSize(size,size)
+    
     renderer.SetBackground(colors.GetColor3d('DarkOliveGreen'))
+    
+    interactor.GetRenderWindow().AddRenderer(renderer)
+    #window.setCentralWidget(interactor)
+    
+    interactor.GetRenderWindow().GetInteractor().Initialize()
 
     actors_transformed = add_paricles(Coords, renderer, particles_number, colors)
     add_stl_object(path_to_stl, renderer, colors)
     
-    set_window(window, renderer, size = 500)
-        
-    set_interactor(interactor, window, refresh_rate, actors_transformed, Coords, particles_number)
+    #interactor.SetRenderWindow(window)
+    #interactor.Initialize()
+    interactor.CreateRepeatingTimer(int(1/refresh_rate))
+
+    # add particles
+    for i in range(particles_number):
+        interactor.AddObserver("TimerEvent", partial(actors_transformed[i].execute, param=Coords[i,:,:]))
+
+    #timerId = interactor.CreateRepeatingTimer(100) # ???
+    #window.Render()
     
     cam = renderer.GetActiveCamera()
-    set_camera(cam)
+    
+    position = (5,5,1000)
+    zoom = 0.01
+    
+    cam.SetPosition(position[0],position[1],position[2])
+    cam.ParallelProjectionOn()
+    cam.Zoom(zoom)
     
     window.Render()
     

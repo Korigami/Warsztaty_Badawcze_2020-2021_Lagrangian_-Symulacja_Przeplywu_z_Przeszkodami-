@@ -1,3 +1,4 @@
+import PyQt5
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
@@ -46,6 +47,14 @@ class StartWindow(QWidget):
         super().__init__(parent)
         self.interfejs()
 
+    def center(self):
+        frameGm = self.frameGeometry()
+        screen = PyQt5.QtWidgets.QApplication.desktop().screenNumber(PyQt5.QtWidgets.QApplication.desktop().cursor().pos())
+        centerPoint = PyQt5.QtWidgets.QApplication.desktop().screenGeometry(screen).center()
+        frameGm.moveCenter(centerPoint)
+        self.move(frameGm.topLeft())
+
+    
     def interfejs(self):
         # etykiety
         Info = QLabel("Wybierz obiekt", self)
@@ -71,6 +80,7 @@ class StartWindow(QWidget):
         
         self.setGeometry(20, 20, 400, 100)
         self.setWindowTitle("NAZWA APKI")
+        self.center()
         self.show()
 
     
@@ -94,6 +104,13 @@ class VizualizeWindow(QWidget):
         super().__init__(parent)
 
         self.interfejs()
+
+    def center(self):
+        frameGm = self.frameGeometry()
+        screen = PyQt5.QtWidgets.QApplication.desktop().screenNumber(PyQt5.QtWidgets.QApplication.desktop().cursor().pos())
+        centerPoint = PyQt5.QtWidgets.QApplication.desktop().screenGeometry(screen).center()
+        frameGm.moveCenter(centerPoint)
+        self.move(frameGm.topLeft())
 
     def interfejs(self):
         # etykiety
@@ -198,6 +215,7 @@ class VizualizeWindow(QWidget):
 
         self.setGeometry(20, 20, 400, 100)
         self.setWindowTitle("NAZWA OKIENKA")
+        self.center()
         self.show()
     
     def Calculations(self):
@@ -238,6 +256,13 @@ class AuthorsWindow(QWidget):
 
         self.interfejs()
 
+    def center(self):
+        frameGm = self.frameGeometry()
+        screen = PyQt5.QtWidgets.QApplication.desktop().screenNumber(PyQt5.QtWidgets.QApplication.desktop().cursor().pos())
+        centerPoint = PyQt5.QtWidgets.QApplication.desktop().screenGeometry(screen).center()
+        frameGm.moveCenter(centerPoint)
+        self.move(frameGm.topLeft())
+    
     def interfejs(self):
         Info1 = QLabel("Autorzy:", self)
         Info2 = QLabel(" 1) Paweł Lefelbajn", self)
@@ -259,6 +284,7 @@ class AuthorsWindow(QWidget):
         
         self.setGeometry(20, 20, 400, 300)
         self.setWindowTitle("Autorzy")
+        self.center()
         self.show()
     
 
@@ -268,6 +294,10 @@ class AuthorsWindow(QWidget):
         self.cams.show()
         self.close()
     
+############################
+############################
+############################
+############################
 
 class ResultWindow(QWidget):
 
@@ -276,23 +306,46 @@ class ResultWindow(QWidget):
 
         self.interfejs(args)
 
+    def center(self):
+        frameGm = self.frameGeometry()
+        screen = PyQt5.QtWidgets.QApplication.desktop().screenNumber(PyQt5.QtWidgets.QApplication.desktop().cursor().pos())
+        centerPoint = PyQt5.QtWidgets.QApplication.desktop().screenGeometry(screen).center()
+        frameGm.moveCenter(centerPoint)
+        self.move(frameGm.topLeft())
+    
     def interfejs(self,args):
         self.particles_number = args[0]
         self.refresh_rate = args[1]
         self.Object = args[2]
         Coords = args[3]
         
-        ### animacja
-        self.frame = Qt.QFrame()
-        self.vl = Qt.QVBoxLayout()
-        self.vtkWidget = QVTKRenderWindowInteractor(self.frame)
-        self.vl.addWidget(self.vtkWidget)
-        self.frame.setLayout(self.vl)
-        self.renderer = vtk.vtkRenderer()
-        self.window = self.vtkWidget.GetRenderWindow()
-        self.interactor = self.vtkWidget.GetRenderWindow().GetInteractor()
-        self.show()
         
+        #Info1 = QLabel("Autorzy:", self)
+        #Info2 = QLabel(f"{self.particles_number}", self)
+        #Info3 = QLabel(f"{self.refresh_rate}", self)
+        #Info4 = QLabel(f"{self.Object}", self)
+        #ukladT = QGridLayout()
+        #ukladT.addWidget(Info1, 0, 0)
+        #ukladT.addWidget(Info2, 1, 0)
+        #ukladT.addWidget(Info3, 2, 0)
+        #ukladT.addWidget(Info4, 3, 0)
+        
+        #self.setLayout(ukladT)
+        ### animacja
+        #self.frame = Qt.QFrame()
+        #elf.window = Qt.QMainWindow()
+        #self.vl = Qt.QVBoxLayout()
+        self.renderer = vtk.vtkRenderer()
+        self.interactor = QVTKRenderWindowInteractor(self)
+        self.window = self.interactor.GetRenderWindow()
+
+        #self.vl.addWidget(self.vtkWidget)
+        #self.frame.setLayout(self.vl)
+        #self.renderer = vtk.vtkRenderer()
+        #self.window = self.vtkWidget.GetRenderWindow()
+        #self.interactor = self.vtkWidget.GetRenderWindow().GetInteractor()
+        #
+        # 
         self.interactor = prepare_animation(
                             self.renderer, 
                             self.window, 
@@ -305,14 +358,16 @@ class ResultWindow(QWidget):
         self.interactor.Start()
         ###
         
-        self.ReturnBtn = QPushButton("&Powrót", self)
-        self.ReturnBtn.clicked.connect(self.switch_start_window)
 
-        self.vl.addWidget(self.ReturnBtn)
+        #self.ReturnBtn = QPushButton("&Powrót", self)
+        #self.ReturnBtn.clicked.connect(self.switch_start_window)
+
+        #self.vl.addWidget(self.ReturnBtn)
 
 
         self.setGeometry(20, 20, 400, 600)
         self.setWindowTitle("Wizualizacja")
+        self.center()
         self.show()
     
 
@@ -322,7 +377,10 @@ class ResultWindow(QWidget):
         self.cams.show()
         self.close()
     
-
+###############################
+###############################
+###############################
+###############################
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

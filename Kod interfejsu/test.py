@@ -6,8 +6,8 @@ from VTKAnimation import prepare_animation
 refresh_rate = 60 # In Hertz
 
 # Ścieżka do stl
-path_to_stl = '../Siatki/Stanford_Bunny_sample.stl'
-
+#path_to_stl = '../Siatki/Stanford_Bunny_sample.stl'
+path_to_stl= '../Siatki/Menger_sponge_sample.stl'
 
 ###########  Wygenerowanie danych testowych
 
