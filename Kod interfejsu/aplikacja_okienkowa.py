@@ -9,6 +9,8 @@ import sys, time
 
 import pyvista as pv
 
+import pandas as pd
+
 # STAŁE PARAMETRY
 path_to_stl = '../Siatki/'
 stl_files = {'Krolik':path_to_stl+'Stanford_Bunny_sample.stl', 
@@ -174,28 +176,36 @@ class VizualizeWindow(BaseWindow):
         self.setLayout(ukladT)
     
     #####################################################################3
-    def Tmp_Simulation(self,particles_number,number_of_time_periods,delta_time):
-        Coords = np.ndarray(shape=(particles_number, number_of_time_periods, 3))
+    # def Tmp_Simulation(self,particles_number,number_of_time_periods,delta_time):
+    #     Coords = np.ndarray(shape=(particles_number, number_of_time_periods, 3))
 
-        Velocities = np.ndarray(shape=(particles_number, 3))
+    #     Velocities = np.ndarray(shape=(particles_number, 3))
 
-        for i in range(particles_number):
-            Velocities[i,0]=np.random.uniform(low=-20,high=20)
-            Velocities[i,1]=np.random.uniform(low=-20,high=20)
-            Velocities[i,2]=np.random.uniform(low=-2,high=2)
+    #     for i in range(particles_number):
+    #         Velocities[i,0]=np.random.uniform(low=-20,high=20)
+    #         Velocities[i,1]=np.random.uniform(low=-20,high=20)
+    #         Velocities[i,2]=np.random.uniform(low=-2,high=2)
 
-        for i in range(particles_number):
-            #i-ta cząstka na polu (i,i,0)
-            Coords[i,0,0]=np.random.uniform(low=-200,high=200)
-            Coords[i,0,1]=np.random.uniform(low=-200,high=200)
-            Coords[i,0,2]=np.random.uniform(low=-200,high=200)
+    #     for i in range(particles_number):
+    #         #i-ta cząstka na polu (i,i,0)
+    #         Coords[i,0,0]=np.random.uniform(low=-200,high=200)
+    #         Coords[i,0,1]=np.random.uniform(low=-200,high=200)
+    #         Coords[i,0,2]=np.random.uniform(low=-200,high=200)
 
-        for i in range(particles_number):
-            for j in range(1,number_of_time_periods):
-                for k in range(3):
-                    Coords[i,j,k]=Coords[i,j-1,k]+Velocities[i,k]*delta_time/1000
-        return Coords
+    #     for i in range(particles_number):
+    #         for j in range(1,number_of_time_periods):
+    #             for k in range(3):
+    #                 Coords[i,j,k]=Coords[i,j-1,k]+Velocities[i,k]*delta_time/1000
+    #     return Coords
     #####################################################################3
+    
+    def Tmp_Simulation(self,particles_number,number_of_time_periods,delta_time):
+        self.particles_number = 25
+        self.number_of_time_periods = 100
+        Coords = pd.read_pickle('positions6.pkl')
+        return Coords
+    
+    
     def Calculations(self):
         save = self.save
         particles_number = self.particles_number.value()
@@ -265,7 +275,7 @@ class ResultWindow(BaseWindow):
         for i in range(particles_number):
             self.plotter.add_mesh(
                     pv.Sphere(
-                        radius = 1,
+                        radius = 0.4,
                         center = (
                             Coords[i,j,0],
                             Coords[i,j,1],
@@ -274,7 +284,7 @@ class ResultWindow(BaseWindow):
                     ),
                     name = f"{i}",
                     smooth_shading=True,
-                    color = 'black'
+                    color = 'red'
                     )
                         
     def animate(self,particles_number, number_of_time_periods ,Object, Coords, save):
@@ -303,10 +313,10 @@ class ResultWindow(BaseWindow):
         # print(Object)
         # print(save)
         
-        self.plotter = pv.Plotter(window_size=[1920,1080],line_smoothing =True, point_smoothing= True, polygon_smoothing = True)
+        self.plotter = pv.Plotter(window_size=[1920,1080])#,line_smoothing =True, point_smoothing= True, polygon_smoothing = True)
         self.plotter.set_background(color='white')
         self.mesh = pv.PolyData(path_to_stl+stl_files[Object])
-        self.plotter.add_mesh(self.mesh ,name = f"{Object}", smooth_shading=True, color = 'green')
+        self.plotter.add_mesh(self.mesh ,name = f"{Object}", color = 'green')
         self.plotter.show(auto_close=False)
         
         self.animate(particles_number,
