@@ -365,6 +365,9 @@ cdef class Octree:
         self.triangles_mesh_v1 = triangles_mesh.v1.astype(np.double)
         self.triangles_mesh_v2 = triangles_mesh.v2.astype(np.double)
         self.triangles_mesh_normals = triangles_mesh.normals.astype(np.double)
+        
+    cpdef get_biggest_cube_params(self):
+        return self.root.cube.r, self.root.cube.origin
 
     cdef void add_triangle_to_not_leaf(self, Node node, int triangle_idx):
         cdef int subcube_idx
@@ -430,7 +433,8 @@ cdef class Octree:
         cdef int column_size_of_triangles = self.real_max_leaf_size
         cdef np.ndarray[np.int32_t,ndim=2] triangles = np.zeros((row_size_of_triangles, column_size_of_triangles), dtype=np.int32) - 1
         cdef np.ndarray[np.npy_bool,ndim=1] particles_inside = self.root.cube.contains_particles(particles)
-        return self.for_search(particles[particles_inside], triangles[particles_inside], self.root)
+        triangles[particles_inside] = self.for_search(particles[particles_inside], triangles[particles_inside], self.root) 
+        return triangles
 
     def __repr__(self):
         return 'Height = {}'.format(self.height) + chr(10) + repr(self.root)

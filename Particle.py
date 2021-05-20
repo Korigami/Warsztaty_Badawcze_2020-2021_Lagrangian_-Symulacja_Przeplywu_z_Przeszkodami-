@@ -5,7 +5,7 @@ def add_gravity(
     three_vector,
     gravity
 ):
-    return np.array( [ three_vector[0], three_vector[1], three_vector[2] + gravity])
+    return np.array( [ three_vector[0], three_vector[1], three_vector[2] - gravity])
 
 class Constants:
 
@@ -21,127 +21,176 @@ class Constants:
         self.air_density = air_density
         self.wind_vel = wind_vel
 
+
 class Particle:
 
-    def __init__( self, cur_pos, new_pos, vel, mass, cross_area):
+    def __init__( 
+        self, 
+        cur_pos = np.array([0.0,0.0,0.0]), 
+        new_pos = np.array([0.0,0.0,0.0]), 
+        vel = np.array([0.0,0.0,0.0]), 
+        mass = 0.0, 
+        cross_area = 0.0
+    ):
         self.cur_pos = cur_pos
         self.new_pos = new_pos # nowe polozenie jest skladowane, bo jest potrzebne dla kazdego trojkata
         self.vel = vel
         self.mass = mass
         self.cross_area = cross_area
 
+    
     def update_velocity(
         self,
         constants,
         dt
     ):
+        '''
+            Funkcja ma na celu zadanie nowej prędkości czastce po jej przemieszczeniu
+            (w tym tez odbiciu).
+        '''
         air_friction_constant_part \
-            = - constants.fric_coeff * self.cross_area * constants.air_density / 2
+            = - constants.fric_coeff \
+                * self.cross_area * constants.air_density / 2
 
-        vel_of_part_in_fluid = np.subtract( self.vel, constants.wind_vel)
+        vel_of_part_in_fluid = self.vel - constants.wind_vel
 
         air_friction \
             = vel_of_part_in_fluid \
-                * math.sqrt( np.dot( vel_of_part_in_fluid, vel_of_part_in_fluid)) * air_friction_constant_part
+                * math.sqrt( 
+                    np.dot( 
+                        vel_of_part_in_fluid,
+                         vel_of_part_in_fluid
+                        )
+                    ) * air_friction_constant_part
              
 
         '''
             Na przyspieszenie składa się siła grawitacji i oporu powietrza
         '''
-        acceleration = add_gravity( air_friction, constants.gravity)  # a = (F_g + F_oporu)/m
+        acceleration = add_gravity( 
+            air_friction,
+            self.mass * constants.gravity
+        )  
+        # a = (F_g + F_oporu)/m
         acceleration = acceleration * (dt / self.mass)
         
         '''
-            Przyspieszenie zmienia się zgodnie z przyspieszneiem
+            Predkosc zmienia się zgodnie z przyspieszneiem
         '''
-        self.vel += acceleration # dv = a dt
+        self.vel = self.vel + acceleration # dv = a dt
 
-        
-    def get_time_of_hit( 
+        # Obliczamy nowa pozycje
+        self.new_pos = self.cur_pos + self.vel*dt
+
+    def change_part_pos_after_hit( 
         self,
-        triangle,
-        dt
-    ):
-        # Wysokość nad trójkątem z perspektywy pierwszego wierzchołka
-        h_init = np.dot( \
-            self.cur_pos - triangle[0],
-            triangle[3]    
-        )
-
-        # Wysokość pod trójkątem "po przelocie" z perspektywy pierwszego wierzchołka
-        h_end = np.dot( \
-            self.new_pos - triangle[0],
-            triangle[3]
-        )
-
-        # Jeśli byliśmy "pod" lub skończyliśmy "nad" trójkątem, to przez niego nie przelecieliśmy
-        if h_init < 0 or h_end > 0:
-            return np.inf
-
-        hit_time = h_init * dt / (h_init - h_end)
-        hit_pos = self.cur_pos + self.vel * hit_time
-
-
-        mat = np.transpose([ # macierz określa płaszczyznę t0 + a(t1 -t0) + b(t2 -t0)
-            triangle[0],
-            np.subtract( triangle[1], triangle[0]),
-            np.subtract( triangle[2], triangle[0])
-        ])
-
-        # Wyrażamy współrzędne punktu zderzenia we wspolrzednych barycentrycznych
-        hit_coords = np.linalg.solve( mat, hit_pos) 
-
-        # Aby się zderzyć, musieliśmy wylądować w płaszczyznie t0 + a(t1 -t0) + b(t2 -t0) z warunkami, ze a i b > 0 a ponadto a+b < 1
-        # ZMIENIĆ RTOL
-        if np.allclose( hit_coords[0], 1, rtol = 1) \
-                    and hit_coords[1] > 0  and hit_coords[2] > 0 and hit_coords[1] + hit_coords[2] < 1:
-            return hit_time
-
-        else:
-            return np.inf 
-
-
-
-    def change_part_pos_after_hit(
-        self,
-        triangle,
+        triangle, # To jest trojkat jak w Triangle.py, tylko w postaci macierzy 5x3
+        hit_time, hit_pos, 
         dt 
     ):
-        vel_norm_comp = np.dot( self.vel, triangle[3]) # wspolrzedna predkosci do trojkata
 
-        hit_time = self.get_time_of_hit( triangle, dt)
+        # wspolrzedna predkosci normalna do trojkata
+        vel_norm_comp = \
+            np.dot( 
+                self.vel,
+                triangle[4,]
+            )
+
+        # Jesli zderzenie nie zaszlo, to predkosc sie nie zmienia i lecimy przez caly czas
+        if hit_time == np.inf:
+            self.cur_pos =self.cur_pos + self.vel*dt
+            
+            return self.cur_pos
 
         hit_pos = self.cur_pos + hit_time*self.vel #x(t) = x0 + t*v0
 
-        # Zakladamy odbicia idealnie sprzeyste - przy odbiciu wspolrzedna normalna do powierzchni przechodzi na przeciwna
-        self.vel = np.subtract( 
-            self.vel,
-            2*vel_norm_comp*triangle[3] 
-        )
+        # Zakladamy odbicia idealnie sprezyste - przy odbiciu wspolrzedna normalna do powierzchni przechodzi na przeciwna
+        self.vel = self.vel - ( triangle[4,]  * ( 2*vel_norm_comp) )
+ 
 
         # Po odbiciu lecimy z nowa predkoscia az do konca iteracji
-        self.cur_pos = np.add(
-            hit_pos,
-            (dt - hit_time)*part.vel
-        )
-        part.new_pos = part.cur_pos + dt*part.vel #i okreslamy nowa pozycje
-        return cur_pos
-
-    def get_full_trajectory(
-        self, 
-        full_time, dt
-    ):
+        self.cur_pos = hit_pos + self.vel * (dt - hit_time)
         
-        time_steps = full_time // dt 
-        trajectory = []
 
-        time_so_far = 0
-        while time_so_far < full_time:
-            trajectory.append( self.cur_pos)
-            self.calc_new_pos( )
+    def update_particle_position(
+        self, 
+        converted_triangles,
+        no_of_triangles,
+        tolerance,
+        dt
+    ):
+
+        # Jezeli nie znalezlismy zadnego trojkata to propagujemy bez zmian
+        if no_of_triangles == 0:
+            self.cur_pos = self.cur_pos + self.vel * dt 
+            return
+
+        # Wysokość nad trójkątem z perspektywy pierwszego wierzchołka
+        h_inits = np.einsum( \
+            'ij,ij->i',
+            self.cur_pos - converted_triangles[:,0,:], # cur_pos - v0
+            converted_triangles[:,4,:]
+        )
+        
+        # Wysokość pod trójkątem "po przelocie" z perspektywy pierwszego wierzchołka
+        h_ends = np.einsum( \
+            'ij,ij->i',
+            self.new_pos - converted_triangles[:,0,:], # new_pos - v0
+            converted_triangles[:,4,:]
+        )
+
+        # Czasy zderzen z plaszczyzna wyznaczona przez trojkaty
+        hit_times = np.divide( 
+            h_inits * dt,
+            h_inits - h_ends
+        )
+        # Zbieramy miejsca zderzen
+        hit_pos = np.outer( hit_times, self.vel) + self.cur_pos
+
+        # Wyrażamy współrzędne punktu zderzenia we wspolrzednych barycentrycznych
+        hit_coords = np.einsum( 
+            "ijk,ik->ij",
+            converted_triangles[:,1:4,:], #A^-1, gdzie A X = hit_pos
+            hit_pos
+        )
+
+        # Poprawiamy powyzsze czasy o to z ktorej strony sie zderzamy oraz o to,
+        # czy trafiamy w trojkat czy poza
+        for t in range( no_of_triangles):
+
+            # Gdy zderzenie zaszloze zlej strony
+            if h_inits[t] < 0 or h_ends[t] > 0:
+                hit_times[t] = np.inf
+
+            # Gdy zderzenie mialo miejsce z dobrej strony
+            else:
+
+                # Gdy zderzenie bylo poza trojkatem
+                if hit_coords[t,1] < 0 or hit_coords[t, 2] < 0 or hit_coords[t,1] + hit_coords[t,2] > 1:
+                    hit_times[t] = np.inf
+                
+                # Chyba ponizsze niepotrzebne - obliczamy zderzenia z powierzchnia wyznaczona przez trojkat
+                #elif not np.allclose( hit_coords[t,0], 1, rtol = tolerance):
+                #    hit_times[t] = np.inf
+
+        '''
+            W tym momencie hit_times zawiera:
+            - jesli zderzenie nie zaszlo, lub zaszlo poza trojkatem:
+                np.inf
+            - jesli zderzenie zaszlo w trojkacie:
+                czas zderzenia
+        '''
+
+        # znajdujemy indeks trojkata z ktorym zaszlo zderzenie
+        relative_index_of_hit_triangle = hit_times.argmin() 
+
+        # Zmieniamy pozycje czastki po zderzeniu
+        self.change_part_pos_after_hit(
+            converted_triangles[ relative_index_of_hit_triangle, ],
+            hit_times[ relative_index_of_hit_triangle],
+            hit_pos[ relative_index_of_hit_triangle],
+            dt
+        )
 
 
-#def update_positions_to_all( 
-#    particles,
-#    dt
-#):
+    
