@@ -8,8 +8,9 @@ import numpy as np
 import sys, time
 
 import pyvista as pv
+import pyvistaqt as pvqt
 
-import pandas as pd
+import pickle
 
 # STAŁE PARAMETRY
 path_to_stl = '../Siatki/'
@@ -17,6 +18,8 @@ stl_files = {'Krolik':path_to_stl+'Stanford_Bunny_sample.stl',
              'Kostka Mengera' : path_to_stl+'Menger_sponge_sample.stl',
              'Kostka': path_to_stl+'Cube_3d_printing_sample.stl'}
 
+PARTICLES_NUMBER = 1000
+NUMBER_OF_TIME_PERIODS = 1000
 
 ###################################
 ######  APLIKACJA OKIENKOWA  ######
@@ -200,16 +203,20 @@ class VizualizeWindow(BaseWindow):
     #####################################################################3
     
     def Tmp_Simulation(self,particles_number,number_of_time_periods,delta_time):
-        self.particles_number = 25
-        self.number_of_time_periods = 100
-        Coords = pd.read_pickle('positions6.pkl')
+        self.particles_number = particles_number
+        self.number_of_time_periods = number_of_time_periods
+        with open("test4.pkl", mode ='rb') as f:
+            Coords = pickle.load(f)
+        
         return Coords
     
     
     def Calculations(self):
+        particles_number = PARTICLES_NUMBER
+        number_of_time_periods = NUMBER_OF_TIME_PERIODS
         save = self.save
-        particles_number = self.particles_number.value()
-        number_of_time_periods = self.number_of_time_periods.value()
+        #particles_number = self.particles_number.value()
+        #number_of_time_periods = self.number_of_time_periods.value()
         Object = self.Object.currentItem().text()
         delta_time = self.delta_time.value()
         
@@ -271,35 +278,30 @@ class ResultWindow(BaseWindow):
         self.interfejs(args)
         self.show()
 
-    def single_animation(self, particles_number, j, Object, Coords, save):
-        for i in range(particles_number):
-            self.plotter.add_mesh(
-                    pv.Sphere(
-                        radius = 0.4,
-                        center = (
-                            Coords[i,j,0],
-                            Coords[i,j,1],
-                            Coords[i,j,2]
-                            )
-                    ),
-                    name = f"{i}",
+    def single_animation(self,j, Coords):
+        points = Coords[:,j,:]
+        point_cloud = pv.PolyData(points)
+        self.plotter.add_mesh(
+                    point_cloud,
+                    name = f"a",
                     smooth_shading=True,
                     color = 'red'
                     )
                         
-    def animate(self,particles_number, number_of_time_periods ,Object, Coords, save):
+    def animate(self,number_of_time_periods ,Object, Coords, save):
         if save == "Avi":
             self.plotter.open_movie(f"{Object}.avi",framerate = 10)
         elif save == "Gif":
             self.plotter.open_gif(f"{Object}.gif")
         for j in range(number_of_time_periods):
             start_time = time.time()
-            self.single_animation(particles_number, j, Object, Coords, save)
+            self.single_animation(j, Coords)
             if save != "Nie":
                 self.plotter.write_frame()
             print("--- %s seconds ---" % (time.time() - start_time))
         self.plotter.close()
         
+
     def interfejs(self,args):
         ukladT = QGridLayout()
         # etykiety
@@ -313,14 +315,17 @@ class ResultWindow(BaseWindow):
         # print(Object)
         # print(save)
         
-        self.plotter = pv.Plotter(window_size=[1920,1080])#,line_smoothing =True, point_smoothing= True, polygon_smoothing = True)
+        if save == "Nie":
+            self.plotter = pv.Plotter(window_size=[1920,1080],line_smoothing =True, point_smoothing= True, polygon_smoothing = True)
+        else:
+            self.plotter = pv.Plotter(window_size=[1920,1080],line_smoothing =True, point_smoothing= True, polygon_smoothing = True)#,off_screen=True,)
+        #self.plotter.add_checkbox_button_widget(self.toggle_animation, value=False, color_on='green')
         self.plotter.set_background(color='white')
-        self.mesh = pv.PolyData(path_to_stl+stl_files[Object])
+        self.mesh = pv.PolyData(stl_files[Object])
         self.plotter.add_mesh(self.mesh ,name = f"{Object}", color = 'green')
         self.plotter.show(auto_close=False)
         
-        self.animate(particles_number,
-                    number_of_time_periods,
+        self.animate(number_of_time_periods,
                     Object,
                     Coords, 
                     save)
