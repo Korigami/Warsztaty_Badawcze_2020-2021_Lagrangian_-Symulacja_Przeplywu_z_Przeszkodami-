@@ -2,6 +2,7 @@
 cimport cython
 import numpy as np
 cimport numpy as np
+import pyvista as pv
 
 cdef np.ndarray[np.double_t,ndim=1] find_min_max(double x0, double x1, double x2):
     cdef double p_min = x0
@@ -365,7 +366,7 @@ cdef class Octree:
         self.triangles_mesh_v1 = triangles_mesh.v1.astype(np.double)
         self.triangles_mesh_v2 = triangles_mesh.v2.astype(np.double)
         self.triangles_mesh_normals = triangles_mesh.normals.astype(np.double)
-        
+
     cpdef get_biggest_cube_params(self):
         return self.root.cube.r, self.root.cube.origin
 
@@ -434,21 +435,26 @@ cdef class Octree:
         cdef np.ndarray[np.int32_t,ndim=2] triangles = np.zeros((row_size_of_triangles, column_size_of_triangles), dtype=np.int32) - 2
         cdef np.ndarray[np.npy_bool,ndim=1] particles_inside = self.root.cube.contains_particles(particles)
         triangles[particles_inside] = -1
-        triangles[particles_inside] = self.for_search(particles[particles_inside], triangles[particles_inside], self.root) 
+        triangles[particles_inside] = self.for_search(particles[particles_inside], triangles[particles_inside], self.root)
         return triangles
+
+    cpdef void for_plotter_cubes_mesh(self, Node node, plotter):
+        cdef Node child
+        cdef double color_param
+        cdef double cube_diam
+        cdef double factor = 1/float(self.real_max_leaf_size)
+        for child in node.children:
+            if child.is_leaf():
+                color_param = factor*len(child.triangles)
+                cube_diam = 2*child.cube.r
+                plotter.add_mesh(pv.Cube(child.cube.origin, cube_diam, cube_diam, cube_diam),
+                                 color=[0, color_param, 0])
+            self.for_plotter_cubes_mesh(child, plotter)
+
+    def plotter_cubes_mesh(self):
+        plotter = pv.Plotter()
+        self.for_plotter_cubes_mesh(self.root, plotter)
+        return plotter
 
     def __repr__(self):
         return 'Height = {}'.format(self.height) + chr(10) + repr(self.root)
-
-
-def convert_found_triangles(to_convert):
-    converted_array = np.zeros((to_convert.shape[0], 2), dtype=object)
-    converted_array[:,0] = np.arange(to_convert.shape[0])
-    indices_containing_triangles = np.sum(to_convert > -1, axis=1) > 0
-    new_to_convert = to_convert.copy()[indices_containing_triangles]
-    converted_array = converted_array[indices_containing_triangles]
-    triangles_list = []
-    for i in range(new_to_convert.shape[0]):
-        triangles_list.append(list(new_to_convert[i,:][new_to_convert[i,:] > -1]))
-    converted_array[:,1] = triangles_list
-    return converted_array
