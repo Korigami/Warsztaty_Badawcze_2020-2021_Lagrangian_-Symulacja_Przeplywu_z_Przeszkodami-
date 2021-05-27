@@ -431,8 +431,9 @@ cdef class Octree:
     cpdef np.ndarray[np.int32_t,ndim=2] search(self, np.ndarray[np.double_t,ndim=2] particles):
         cdef int row_size_of_triangles = particles.shape[0]
         cdef int column_size_of_triangles = self.real_max_leaf_size
-        cdef np.ndarray[np.int32_t,ndim=2] triangles = np.zeros((row_size_of_triangles, column_size_of_triangles), dtype=np.int32) - 1
+        cdef np.ndarray[np.int32_t,ndim=2] triangles = np.zeros((row_size_of_triangles, column_size_of_triangles), dtype=np.int32) - 2
         cdef np.ndarray[np.npy_bool,ndim=1] particles_inside = self.root.cube.contains_particles(particles)
+        triangles[particles_inside] = -1
         triangles[particles_inside] = self.for_search(particles[particles_inside], triangles[particles_inside], self.root) 
         return triangles
 
