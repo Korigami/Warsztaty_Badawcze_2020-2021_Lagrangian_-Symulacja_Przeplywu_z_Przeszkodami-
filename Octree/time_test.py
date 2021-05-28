@@ -36,19 +36,19 @@ for idx in range(4):
 figure, axis = plt.subplots(1, 2)
 figure.set_size_inches(18.5, 10.5)
 
-axis[0].plot(height_list, build_time[0], label='leaf_size=10')
-axis[0].plot(height_list, build_time[1], label='leaf_size=20')
-axis[0].plot(height_list, build_time[2], label='leaf_size=50')
-axis[0].plot(height_list, build_time[3], label='leaf_size=200')
+axis[0].plot(height_list, build_time[0], label='maximal_leaf_size=10')
+axis[0].plot(height_list, build_time[1], label='maximal_leaf_size=20')
+axis[0].plot(height_list, build_time[2], label='maximal_leaf_size=50')
+axis[0].plot(height_list, build_time[3], label='maximal_leaf_size=200')
 
 axis[0].set_title('Czas budowy drzewa')
 axis[0].set_xlabel('Wysokosc drzewa')
 axis[0].set_ylabel('Czas')
 
-axis[1].plot(height_list, search_time[0], label='leaf_size=10')
-axis[1].plot(height_list, search_time[1], label='leaf_size=20')
-axis[1].plot(height_list, search_time[2], label='leaf_size=50')
-axis[1].plot(height_list, search_time[3], label='leaf_size=200')
+axis[1].plot(height_list, search_time[0], label='maximal_leaf_size=10')
+axis[1].plot(height_list, search_time[1], label='maximal_leaf_size=20')
+axis[1].plot(height_list, search_time[2], label='maximal_leaf_size=50')
+axis[1].plot(height_list, search_time[3], label='maximal_leaf_size=200')
 
 axis[1].set_title('Czas przeszukiwania drzewa (500 tys. czastek)')
 axis[1].set_xlabel('Wysokosc drzewa')
