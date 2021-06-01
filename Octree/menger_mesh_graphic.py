@@ -5,7 +5,7 @@ from stl import mesh
 menger_origin = np.array([0, 0, 0], dtype=np.double)
 menger_r = 2
 
-maximal_leaf_size = 10
+maximal_leaf_size = 50
 maximal_tree_height = 7
 
 path_to_file = 'data/Menger_sponge_sample.stl'
