@@ -10,6 +10,9 @@ import sys, time
 import pyvista as pv
 import pyvistaqt as pvqt
 
+import sys
+from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog
+
 import pickle
 
 # STAŁE PARAMETRY
@@ -21,6 +24,7 @@ stl_files = {'Krolik':path_to_stl+'Stanford_Bunny_sample.stl',
 PARTICLES_NUMBER = 1000
 NUMBER_OF_TIME_PERIODS = 1000
 
+NAZWA_APKI = "NAZWA APKI"
 ###################################
 ######  APLIKACJA OKIENKOWA  ######
 ###################################
@@ -29,7 +33,7 @@ class BaseWindow(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setGeometry(20, 20, 400, 100)
-        self.setWindowTitle("NAZWA APKI")
+        self.setWindowTitle(f"{NAZWA_APKI}")
         self.center()
 
     def center(self):
@@ -39,7 +43,7 @@ class BaseWindow(QWidget):
         frameGm.moveCenter(centerPoint)
         self.move(frameGm.topLeft())
 
-
+# Okno startowe
 class StartWindow(BaseWindow):
 
     def __init__(self, parent=None):
@@ -54,22 +58,35 @@ class StartWindow(BaseWindow):
         ukladT.addWidget(Info, 0, 0)
         
         ukladH1 = QHBoxLayout()
-        self.vizualizeBtn = QPushButton("&Wizualizacja", self)
+        self.vizualizeBtn = QPushButton("&Wygeneruj", self)
         self.vizualizeBtn.clicked.connect(self.switch_vizualize_window)
         ukladH1.addWidget(self.vizualizeBtn)
         ukladT.addLayout(ukladH1, 1, 0, 1, 3)
 
+        ukladH1 = QHBoxLayout()
+        self.vizualizeBtn = QPushButton("&Wczytaj", self)
+        self.vizualizeBtn.clicked.connect(self.switch_ChooseLoadObject_window)
+        ukladH1.addWidget(self.vizualizeBtn)
+        ukladT.addLayout(ukladH1, 2, 0, 1, 3)
+        
         ukladH2 = QHBoxLayout()
         self.authorsBtn = QPushButton("&Autorzy", self)
         self.authorsBtn.clicked.connect(self.switch_authors_window)
         ukladH2.addWidget(self.authorsBtn)
-        ukladT.addLayout(ukladH2, 2, 0, 1, 3)
+        ukladT.addLayout(ukladH2, 3, 0, 1, 3)
     
         self.setLayout(ukladT)
-        
+       
+    
     @pyqtSlot()
     def switch_vizualize_window(self):
         self.cams = VizualizeWindow() 
+        self.cams.show()
+        self.close()
+
+    @pyqtSlot()
+    def switch_ChooseLoadObject_window(self):
+        self.cams = ChooseLoadObjectWindow() 
         self.cams.show()
         self.close()
 
@@ -78,8 +95,129 @@ class StartWindow(BaseWindow):
         self.cams = AuthorsWindow() 
         self.cams.show()
         self.close()
-    
 
+# Autorzy
+class AuthorsWindow(BaseWindow):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.interfejs()
+        self.show()
+    
+    # metoda tej klasy
+    def interfejs(self):
+        ukladT = QGridLayout()
+        
+        Info1 = QLabel("Autorzy:", self)
+        ukladT.addWidget(Info1, 0, 0)
+        
+        Info2 = QLabel(" 1) Paweł Lefelbajn", self)
+        ukladT.addWidget(Info2, 1, 0)
+        
+        Info3 = QLabel(" 2) Michał Dybowski", self)
+        ukladT.addWidget(Info3, 2, 0)
+        
+        Info4 = QLabel(" 3) Kacper Kurowski", self)
+        ukladT.addWidget(Info4, 3, 0)     
+        
+        self.returnBtn = QPushButton("&Powrót", self)
+        self.returnBtn.clicked.connect(self.switch_start_window)
+        ukladH1 = QHBoxLayout()
+        ukladH1.addWidget(self.returnBtn)
+        ukladT.addLayout(ukladH1, 4, 0)
+        
+        self.setLayout(ukladT)
+        
+    @pyqtSlot()
+    def switch_start_window(self):
+        self.cams = StartWindow() 
+        self.cams.show()
+        self.close()
+
+# Wczytywanie pickla
+class ChooseLoadObjectWindow(BaseWindow):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.interfejs()
+        self.show()
+
+
+    
+    def Load(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        filename, _ = QFileDialog.getOpenFileName(self,"Wybierz pickla do wczytania","Pickle (*.pkl)", options=options)
+        if filename:
+            with open(filename, mode ='rb') as f:
+                Coords = pickle.load(f)
+            particles_number = Coords.shape[0] #????????????????????????????????????????????
+            number_of_time_periods = Coords.shape[1] #??????????????????????????????????????????
+         Object = self.Object.currentItem().text()
+        save = False if self.save == "Nie" else self.save
+        return particles_number, number_of_time_periods, Object, Coords, save
+    
+    def choose_object(self,ukladT):
+        InfoObject = QLabel("wybierz obiekt", self)
+        ukladT.addWidget(InfoObject, 0, 0)
+        
+        self.Object = QListWidget(self)
+        self.Object.setGeometry(50, 70, 100, 60)
+        item1 = QListWidgetItem("Krolik")
+        item2 = QListWidgetItem("Kostka")
+        item3 = QListWidgetItem("Kostka Mengera")
+        self.Object.addItem(item1)
+        self.Object.addItem(item2)
+        self.Object.addItem(item3)
+        ukladT.addWidget(self.Object, 1, 0)
+        
+        
+    def btnstate(self,b):
+        if b.isChecked() == True:
+            self.save = b.text()
+        
+    def choose_if_save(self,ukladT):
+        
+        InfoObject = QLabel("Czy chcesz zapisać animację w formacie Gif/Avi?", self)
+        ukladT.addWidget(InfoObject, 8, 0)
+        
+        layout = QHBoxLayout()
+        
+        self.b1 = QRadioButton("Nie")
+        self.b1.setChecked(True)
+        self.save = "Nie"
+        self.b1.toggled.connect(lambda:self.btnstate(self.b1))
+        layout.addWidget(self.b1)
+        
+        self.b2 = QRadioButton("avi")
+        self.b2.toggled.connect(lambda:self.btnstate(self.b2))
+        layout.addWidget(self.b2)
+        
+        ukladT.addLayout(layout, 9, 0)
+    
+    def interfejs(self):
+        ukladT = QGridLayout()
+        
+        self.choose_object(ukladT)  # Wybór obiektu
+        self.choose_if_save(ukladT)
+        ##### Przycisk Ok
+        ukladH = QHBoxLayout()
+        self.OkBtn = QPushButton("&OK", self)
+        self.OkBtn.clicked.connect(self.switch_result_window)
+        ukladH.addWidget(self.OkBtn)
+        ukladT.addLayout(ukladH, 10, 0)
+        ########
+        
+        self.setLayout(ukladT)
+            
+    
+    @pyqtSlot()
+    def switch_result_window(self):
+        self.cams = ResultWindow(self.Load())
+        self.cams.show()
+        self.close() 
+
+# Generowanie Pickla
 class VizualizeWindow(BaseWindow):
 
     def __init__(self, parent=None):
@@ -88,7 +226,6 @@ class VizualizeWindow(BaseWindow):
         self.show()
 
     def choose_object(self,ukladT):
-        
         InfoObject = QLabel("wybierz obiekt", self)
         ukladT.addWidget(InfoObject, 0, 0)
         
@@ -149,13 +286,9 @@ class VizualizeWindow(BaseWindow):
         self.b1.toggled.connect(lambda:self.btnstate(self.b1))
         layout.addWidget(self.b1)
         
-        self.b2 = QRadioButton("Gif")
+        self.b2 = QRadioButton("avi")
         self.b2.toggled.connect(lambda:self.btnstate(self.b2))
         layout.addWidget(self.b2)
-        
-        self.b3 = QRadioButton("Avi")
-        self.b3.toggled.connect(lambda:self.btnstate(self.b3))
-        layout.addWidget(self.b3)
         
         ukladT.addLayout(layout, 9, 0)
         
@@ -178,50 +311,22 @@ class VizualizeWindow(BaseWindow):
         
         self.setLayout(ukladT)
     
-    #####################################################################3
-    # def Tmp_Simulation(self,particles_number,number_of_time_periods,delta_time):
-    #     Coords = np.ndarray(shape=(particles_number, number_of_time_periods, 3))
-
-    #     Velocities = np.ndarray(shape=(particles_number, 3))
-
-    #     for i in range(particles_number):
-    #         Velocities[i,0]=np.random.uniform(low=-20,high=20)
-    #         Velocities[i,1]=np.random.uniform(low=-20,high=20)
-    #         Velocities[i,2]=np.random.uniform(low=-2,high=2)
-
-    #     for i in range(particles_number):
-    #         #i-ta cząstka na polu (i,i,0)
-    #         Coords[i,0,0]=np.random.uniform(low=-200,high=200)
-    #         Coords[i,0,1]=np.random.uniform(low=-200,high=200)
-    #         Coords[i,0,2]=np.random.uniform(low=-200,high=200)
-
-    #     for i in range(particles_number):
-    #         for j in range(1,number_of_time_periods):
-    #             for k in range(3):
-    #                 Coords[i,j,k]=Coords[i,j-1,k]+Velocities[i,k]*delta_time/1000
-    #     return Coords
-    #####################################################################3
-    
-    def Tmp_Simulation(self,particles_number,number_of_time_periods,delta_time):
-        self.particles_number = particles_number
-        self.number_of_time_periods = number_of_time_periods
+      
+    def Tmp_Simulation(self):
         with open("test4.pkl", mode ='rb') as f:
             Coords = pickle.load(f)
-        
         return Coords
     
     
     def Calculations(self):
-        particles_number = PARTICLES_NUMBER
-        number_of_time_periods = NUMBER_OF_TIME_PERIODS
-        save = self.save
-        #particles_number = self.particles_number.value()
-        #number_of_time_periods = self.number_of_time_periods.value()
+        save = False if self.save == "Nie" else self.save
+        particles_number = self.particles_number.value()
+        number_of_time_periods = self.number_of_time_periods.value()
         Object = self.Object.currentItem().text()
         delta_time = self.delta_time.value()
         
         #### Tutaj wyznaczanie coords
-        Coords = self.Tmp_Simulation(particles_number,number_of_time_periods,delta_time)
+        Coords = self.Tmp_Simulation()
         ####
         
         return particles_number, number_of_time_periods, Object, Coords, save
@@ -232,44 +337,6 @@ class VizualizeWindow(BaseWindow):
         self.cams = ResultWindow(self.Calculations())
         self.cams.show()
         self.close() 
-    
-
-class AuthorsWindow(BaseWindow):
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.interfejs()
-        self.show()
-    
-    # metoda tej klasy
-    def interfejs(self):
-        ukladT = QGridLayout()
-        
-        Info1 = QLabel("Autorzy:", self)
-        ukladT.addWidget(Info1, 0, 0)
-        
-        Info2 = QLabel(" 1) Paweł Lefelbajn", self)
-        ukladT.addWidget(Info2, 1, 0)
-        
-        Info3 = QLabel(" 2) Michał Dybowski", self)
-        ukladT.addWidget(Info3, 2, 0)
-        
-        Info4 = QLabel(" 3) Kacper Kurowski", self)
-        ukladT.addWidget(Info4, 3, 0)     
-        
-        self.returnBtn = QPushButton("&Powrót", self)
-        self.returnBtn.clicked.connect(self.switch_start_window)
-        ukladH1 = QHBoxLayout()
-        ukladH1.addWidget(self.returnBtn)
-        ukladT.addLayout(ukladH1, 4, 0)
-        
-        self.setLayout(ukladT)
-        
-    @pyqtSlot()
-    def switch_start_window(self):
-        self.cams = StartWindow() 
-        self.cams.show()
-        self.close()
     
 
 class ResultWindow(BaseWindow):
@@ -288,59 +355,84 @@ class ResultWindow(BaseWindow):
                     color = 'red'
                     )
                         
-    def animate(self,number_of_time_periods ,Object, Coords, save):
-        if save == "Avi":
-            self.plotter.open_movie(f"{Object}.avi",framerate = 10)
-        elif save == "Gif":
-            self.plotter.open_gif(f"{Object}.gif")
+    def animate(self,number_of_time_periods, Coords, save, movie_name):
+        if save == "avi":
+            self.plotter.open_movie(f"{movie_name}.avi",framerate = 30)
         for j in range(number_of_time_periods):
-            start_time = time.time()
+            #start_time = time.time()
             self.single_animation(j, Coords)
-            if save != "Nie":
+            if save :
                 self.plotter.write_frame()
-            print("--- %s seconds ---" % (time.time() - start_time))
+            #print("--- %s seconds ---" % (time.time() - start_time))
         self.plotter.close()
-        
+    
+    def save(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        filename, _ = QFileDialog.getSaveFileName(self,"Zapis ruchu cząsteczek","","Pickle (*.pkl)", options=options)
+        if filename:
+            #if filename[-3:] != "pkl":
+            #    filename+=".pkl"
+            with open(filename,'wb') as f: 
+                pickle.dump(self.Coords, f)
+
 
     def interfejs(self,args):
         ukladT = QGridLayout()
         # etykiety
-        particles_number = args[0]
+        #particles_number = args[0]
         number_of_time_periods = args[1]
         Object = args[2]
-        Coords = args[3]
+        self.Coords = args[3]
         save = args[4]
-        # print(particles_number)
-        # print(number_of_time_periods)
-        # print(Object)
-        # print(save)
         
-        if save == "Nie":
+        
+        if not save:
             self.plotter = pv.Plotter(window_size=[1920,1080],line_smoothing =True, point_smoothing= True, polygon_smoothing = True)
         else:
             self.plotter = pv.Plotter(window_size=[1920,1080],line_smoothing =True, point_smoothing= True, polygon_smoothing = True)#,off_screen=True,)
-        #self.plotter.add_checkbox_button_widget(self.toggle_animation, value=False, color_on='green')
         self.plotter.set_background(color='white')
         self.mesh = pv.PolyData(stl_files[Object])
         self.plotter.add_mesh(self.mesh ,name = f"{Object}", color = 'green')
         self.plotter.show(auto_close=False)
         
-        self.animate(number_of_time_periods,
-                    Object,
-                    Coords, 
+        if save:
+            options = QFileDialog.Options()
+            options |= QFileDialog.DontUseNativeDialog
+            movie_name, _ = QFileDialog.getSaveFileName(self,"Zapisywanie filmu","",f" (*.{save})", options=options)
+            #if movie_name and movie_name[-3:] != f"{save}":
+            #movie_name+=f".{save}"
+            self.animate(number_of_time_periods,
+                    self.Coords, 
+                    save,
+                    movie_name)
+        else:
+            self.animate(number_of_time_periods,
+                    self.Coords, 
                     save)
         
         self.returnbtn = QPushButton("&Zamknij", self)
         self.returnbtn.clicked.connect(self.zamknij)
+        
+        self.saveAndReturnbtn = QPushButton("&Zapisz i zamknij", self)
+        self.saveAndReturnbtn.clicked.connect(self.zapisz_i_zamknij)
 
         ukladH1 = QHBoxLayout()
         ukladH1.addWidget(self.returnbtn)
+        ukladH1.addWidget(self.saveAndReturnbtn)
 
         ukladT.addLayout(ukladH1, 1, 0, 1, 3)
+              
         self.setLayout(ukladT)
         
     @pyqtSlot()
     def zamknij(self):
+        self.plotter.close()
+        self.close()
+        
+    @pyqtSlot()
+    def zapisz_i_zamknij(self):
+        self.save()
         self.plotter.close()
         self.close()
     
