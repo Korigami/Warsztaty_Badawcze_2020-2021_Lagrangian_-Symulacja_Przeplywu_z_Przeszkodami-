@@ -153,7 +153,7 @@ class ChooseLoadObjectWindow(BaseWindow):
                 Coords = pickle.load(f)
             particles_number = Coords.shape[0] #????????????????????????????????????????????
             number_of_time_periods = Coords.shape[1] #??????????????????????????????????????????
-         Object = self.Object.currentItem().text()
+        Object = self.Object.currentItem().text()
         save = False if self.save == "Nie" else self.save
         return particles_number, number_of_time_periods, Object, Coords, save
     
@@ -355,7 +355,7 @@ class ResultWindow(BaseWindow):
                     color = 'red'
                     )
                         
-    def animate(self,number_of_time_periods, Coords, save, movie_name):
+    def animate(self,number_of_time_periods, Coords, save, movie_name = None):
         if save == "avi":
             self.plotter.open_movie(f"{movie_name}.avi",framerate = 30)
         for j in range(number_of_time_periods):
