@@ -8,7 +8,6 @@ import numpy as np
 import sys, time
 
 import pyvista as pv
-import pyvistaqt as pvqt
 
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog
@@ -21,22 +20,24 @@ stl_files = {'Krolik':path_to_stl+'Stanford_Bunny_sample.stl',
              'Kostka Mengera' : path_to_stl+'Menger_sponge_sample.stl',
              'Kostka': path_to_stl+'Cube_3d_printing_sample.stl'}
 
-PARTICLES_NUMBER = 1000
-NUMBER_OF_TIME_PERIODS = 1000
-
-NAZWA_APKI = "NAZWA APKI"
+NAZWA_APKI = "Symulacja przepływu z przeszkodami"
 ###################################
 ######  APLIKACJA OKIENKOWA  ######
 ###################################
 class BaseWindow(QWidget):
-    
+    '''
+        Podstawowe Okno z którego dziedziczą pozostałe
+    '''
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setGeometry(20, 20, 400, 100)
+        self.setGeometry(0, 0, 500, 100)
         self.setWindowTitle(f"{NAZWA_APKI}")
         self.center()
 
     def center(self):
+        '''
+        Funkcja wyświetlająca okno aplikacji w centrum aktywnie używanego ekranu
+        '''
         frameGm = self.frameGeometry()
         screen = PyQt5.QtWidgets.QApplication.desktop().screenNumber(PyQt5.QtWidgets.QApplication.desktop().cursor().pos())
         centerPoint = PyQt5.QtWidgets.QApplication.desktop().screenGeometry(screen).center()
@@ -45,7 +46,9 @@ class BaseWindow(QWidget):
 
 # Okno startowe
 class StartWindow(BaseWindow):
-
+    '''
+        Okno startowe aplikacji
+    '''
     def __init__(self, parent=None):
         super().__init__(parent)
         self.interfejs()
@@ -54,7 +57,7 @@ class StartWindow(BaseWindow):
     def interfejs(self):
         ukladT = QGridLayout()
         
-        Info = QLabel("Jakaś informacja", self)
+        Info = QLabel("Co chcesz zrobić?", self)
         ukladT.addWidget(Info, 0, 0)
         
         ukladH1 = QHBoxLayout()
@@ -98,7 +101,9 @@ class StartWindow(BaseWindow):
 
 # Autorzy
 class AuthorsWindow(BaseWindow):
-
+    '''
+        Okno wyświetlające autorów
+    '''
     def __init__(self, parent=None):
         super().__init__(parent)
         self.interfejs()
@@ -136,26 +141,25 @@ class AuthorsWindow(BaseWindow):
 
 # Wczytywanie pickla
 class ChooseLoadObjectWindow(BaseWindow):
-
+    '''
+        Okno do wczytywania gotowych plików .pkl do symulacji
+    '''
     def __init__(self, parent=None):
         super().__init__(parent)
         self.interfejs()
         self.show()
-
-
     
     def Load(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        filename, _ = QFileDialog.getOpenFileName(self,"Wybierz pickla do wczytania","Pickle (*.pkl)", options=options)
+        filename, _ = QFileDialog.getOpenFileName(self,"Wybierz pickla do wczytania","(*.pkl)", options=options)
         if filename:
             with open(filename, mode ='rb') as f:
                 Coords = pickle.load(f)
-            particles_number = Coords.shape[0] #????????????????????????????????????????????
-            number_of_time_periods = Coords.shape[1] #??????????????????????????????????????????
-        Object = self.Object.currentItem().text()
-        save = False if self.save == "Nie" else self.save
-        return particles_number, number_of_time_periods, Object, Coords, save
+            number_of_time_periods = Coords.shape[1]
+            Object = self.Object.currentItem().text()
+            save = False if self.save == "Nie" else self.save
+            return number_of_time_periods, Object, Coords, save
     
     def choose_object(self,ukladT):
         InfoObject = QLabel("wybierz obiekt", self)
@@ -178,7 +182,7 @@ class ChooseLoadObjectWindow(BaseWindow):
         
     def choose_if_save(self,ukladT):
         
-        InfoObject = QLabel("Czy chcesz zapisać animację w formacie Gif/Avi?", self)
+        InfoObject = QLabel("Czy chcesz zapisać animację?", self)
         ukladT.addWidget(InfoObject, 8, 0)
         
         layout = QHBoxLayout()
@@ -219,64 +223,58 @@ class ChooseLoadObjectWindow(BaseWindow):
 
 # Generowanie Pickla
 class VizualizeWindow(BaseWindow):
-
+    '''
+        Okno w którym ustawia sie parametry i wywołuje algorytm wyznaczania trajektori cząsteczek.
+    '''
     def __init__(self, parent=None):
         super().__init__(parent)
         self.interfejs()
         self.show()
 
-    def choose_object(self,ukladT):
+    def choose_object(self,ukladT,i,j):
         InfoObject = QLabel("wybierz obiekt", self)
-        ukladT.addWidget(InfoObject, 0, 0)
+        ukladT.addWidget(InfoObject, i,j)
         
         self.Object = QListWidget(self)
-        self.Object.setGeometry(50, 70, 100, 60)
         item1 = QListWidgetItem("Krolik")
         item2 = QListWidgetItem("Kostka")
         item3 = QListWidgetItem("Kostka Mengera")
         self.Object.addItem(item1)
         self.Object.addItem(item2)
         self.Object.addItem(item3)
-        ukladT.addWidget(self.Object, 1, 0)
+        ukladT.addWidget(self.Object, i+1, j)
         
-    def choose_partcles_number(self,ukladT):
-        InfoParticlesNumber = QLabel("podaj liczbę cząsteczek", self)
-        ukladT.addWidget(InfoParticlesNumber, 2, 0)
-        
-        self.particles_number = QSpinBox()
-        self.particles_number.setMinimum(0)
-        self.particles_number.setMaximum(50)
-        self.particles_number.setValue(20)
-        ukladT.addWidget(self.particles_number, 3, 0)
     
-    def choose_number_of_time_periods(self,ukladT):
-        InfoTimeMax = QLabel("Podaj liczbę iteracji", self)
-        ukladT.addWidget(InfoTimeMax, 4, 0)
-        
-        self.number_of_time_periods = QSpinBox()
-        self.number_of_time_periods.setMinimum(1)
-        self.number_of_time_periods.setMaximum(100)
-        self.number_of_time_periods.setValue(50)
-        ukladT.addWidget(self.number_of_time_periods, 5, 0)
+    def set_QSpinBox(self,ukladT,message,max_value,min_value,deafult_value,i,j):
+        Info= QLabel(message, self)
+        ukladT.addWidget(Info, i,j)
+        spinbox = QSpinBox()
+        spinbox.setMinimum(min_value)
+        spinbox.setMaximum(max_value)
+        spinbox.setValue(deafult_value)
+        ukladT.addWidget(spinbox, i+1, j)
+        return spinbox
     
-    def choose_delta_time(self,ukladT):
-        InfoDeltaTime = QLabel("Podaj krok czasowy (w ms).", self)
-        ukladT.addWidget(InfoDeltaTime, 6, 0)
+    def set_QDoubleSpinBox(self,ukladT,message,max_value,min_value,deafult_value,decimals,i,j):
+        Info= QLabel(message, self)
+        ukladT.addWidget(Info, i,j)
+        doubleSpinbox = QDoubleSpinBox()
+        doubleSpinbox.setMinimum(min_value)
+        doubleSpinbox.setMaximum(max_value)
+        doubleSpinbox.setValue(deafult_value)
+        doubleSpinbox.setDecimals(decimals)
+        ukladT.addWidget(doubleSpinbox, i+1, j)
+        return doubleSpinbox
         
-        self.delta_time = QSpinBox()
-        self.delta_time.setMinimum(10)
-        self.delta_time.setMaximum(1000)
-        self.delta_time.setValue(500)
-        ukladT.addWidget(self.delta_time, 7, 0)
     
     def btnstate(self,b):
         if b.isChecked() == True:
             self.save = b.text()
         
-    def choose_if_save(self,ukladT):
+    def choose_if_save(self,ukladT,i,j):
         
-        InfoObject = QLabel("Czy chcesz zapisać animację w formacie Gif/Avi?", self)
-        ukladT.addWidget(InfoObject, 8, 0)
+        InfoObject = QLabel("Czy chcesz zapisać animację?", self)
+        ukladT.addWidget(InfoObject, i,j)
         
         layout = QHBoxLayout()
         
@@ -290,23 +288,28 @@ class VizualizeWindow(BaseWindow):
         self.b2.toggled.connect(lambda:self.btnstate(self.b2))
         layout.addWidget(self.b2)
         
-        ukladT.addLayout(layout, 9, 0)
-        
+        ukladT.addLayout(layout, i+1, j)
+    
     def interfejs(self):
         ukladT = QGridLayout()
-        
-        self.choose_object(ukladT)  # Wybór obiektu
-        self.choose_partcles_number(ukladT) # Wybór liczby cząsteczek
-        self.choose_number_of_time_periods(ukladT) # Liczba iteracji
-        self.choose_delta_time(ukladT) # Podaj krok czasowy
-        self.choose_if_save(ukladT) # Czy zapisujemy
+                
+        self.choose_object(ukladT,0,0)  # Wybór obiektu
+        self.particles_number = self.set_QSpinBox(ukladT,"liczba cząsteczek",1000000,1,1000,2,0)
+        self.number_of_time_periods = self.set_QSpinBox(ukladT,"liczba iteracji",2000,1,100,4,0)
+        self.delta_time = self.set_QSpinBox(ukladT,"krok czasowy (w ms).",1000,10,500,6,0)
+        self.mass = self.set_QDoubleSpinBox(ukladT,"masa cząsteczek",10,-9,5,3,8,0)
+        self.wind = self.set_QDoubleSpinBox(ukladT,"prędkość wiatru",10,-9,5,3,10,0)
+        self.gravity = self.set_QDoubleSpinBox(ukladT,"przyspieszenie grawitacyjne",10,-9,5,3,12,0)
+        self.friction = self.set_QDoubleSpinBox(ukladT,"współczynnik tarcia z powietrzem",10,-9,5,3,14,0)
+        self.cross_area = self.set_QDoubleSpinBox(ukladT,"pole przekroju poprzecznego cząsteczek",10,-9,5,3,16,0)
+        self.choose_if_save(ukladT,18,0) # Czy zapisujemy
         
         ##### Przycisk Ok
         ukladH = QHBoxLayout()
         self.OkBtn = QPushButton("&OK", self)
         self.OkBtn.clicked.connect(self.switch_result_window)
         ukladH.addWidget(self.OkBtn)
-        ukladT.addLayout(ukladH, 10, 0)
+        ukladT.addLayout(ukladH, 20, 0)
         ########
         
         self.setLayout(ukladT)
@@ -319,17 +322,24 @@ class VizualizeWindow(BaseWindow):
     
     
     def Calculations(self):
+        '''
+            Tutaj pojawia się wywołanie algorytmu
+        '''
         save = False if self.save == "Nie" else self.save
         particles_number = self.particles_number.value()
         number_of_time_periods = self.number_of_time_periods.value()
         Object = self.Object.currentItem().text()
         delta_time = self.delta_time.value()
-        
+        mass = self.mass.value()
+        gravity = self.gravity.value()
+        wind = self.wind.value()
+        friction = self.friction.value()
+        cross_area = self.cross_area.value()
         #### Tutaj wyznaczanie coords
         Coords = self.Tmp_Simulation()
         ####
         
-        return particles_number, number_of_time_periods, Object, Coords, save
+        return number_of_time_periods, Object, Coords, save
         
     
     @pyqtSlot()
@@ -340,6 +350,9 @@ class VizualizeWindow(BaseWindow):
     
 
 class ResultWindow(BaseWindow):
+    '''
+        Okno odpowiadające za wywołanie animacji. Istnieje możliwość zapisania wygenerowanej trajektori do pliku w rozszerzeniu .pkl
+    '''
     def __init__(self, args, parent=None): 
         super().__init__(parent)       
         self.interfejs(args)
@@ -369,28 +382,25 @@ class ResultWindow(BaseWindow):
     def save(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        filename, _ = QFileDialog.getSaveFileName(self,"Zapis ruchu cząsteczek","","Pickle (*.pkl)", options=options)
+        filename, _ = QFileDialog.getSaveFileName(self,"Zapis ruchu cząsteczek",""," (*.pkl)", options=options)
         if filename:
-            #if filename[-3:] != "pkl":
-            #    filename+=".pkl"
+            if filename[-3:] != "pkl":
+                filename+=".pkl"
             with open(filename,'wb') as f: 
                 pickle.dump(self.Coords, f)
 
 
     def interfejs(self,args):
         ukladT = QGridLayout()
-        # etykiety
-        #particles_number = args[0]
-        number_of_time_periods = args[1]
-        Object = args[2]
-        self.Coords = args[3]
-        save = args[4]
-        
+        number_of_time_periods = args[0]
+        Object = args[1]
+        self.Coords = args[2]
+        save = args[3]
         
         if not save:
-            self.plotter = pv.Plotter(window_size=[1920,1080],line_smoothing =True, point_smoothing= True, polygon_smoothing = True)
+            self.plotter = pv.Plotter(window_size=[1856,1024],line_smoothing =True, point_smoothing= True, polygon_smoothing = True)
         else:
-            self.plotter = pv.Plotter(window_size=[1920,1080],line_smoothing =True, point_smoothing= True, polygon_smoothing = True)#,off_screen=True,)
+            self.plotter = pv.Plotter(window_size=[1856,1024],line_smoothing =True, point_smoothing= True, polygon_smoothing = True)#,off_screen=True,)
         self.plotter.set_background(color='white')
         self.mesh = pv.PolyData(stl_files[Object])
         self.plotter.add_mesh(self.mesh ,name = f"{Object}", color = 'green')
@@ -400,8 +410,6 @@ class ResultWindow(BaseWindow):
             options = QFileDialog.Options()
             options |= QFileDialog.DontUseNativeDialog
             movie_name, _ = QFileDialog.getSaveFileName(self,"Zapisywanie filmu","",f" (*.{save})", options=options)
-            #if movie_name and movie_name[-3:] != f"{save}":
-            #movie_name+=f".{save}"
             self.animate(number_of_time_periods,
                     self.Coords, 
                     save,
@@ -412,10 +420,10 @@ class ResultWindow(BaseWindow):
                     save)
         
         self.returnbtn = QPushButton("&Zamknij", self)
-        self.returnbtn.clicked.connect(self.zamknij)
+        self.returnbtn.clicked.connect(self.close_window)
         
-        self.saveAndReturnbtn = QPushButton("&Zapisz i zamknij", self)
-        self.saveAndReturnbtn.clicked.connect(self.zapisz_i_zamknij)
+        self.saveAndReturnbtn = QPushButton("&Zapisz trajektorię i zamknij", self)
+        self.saveAndReturnbtn.clicked.connect(self.save_and_close_window)
 
         ukladH1 = QHBoxLayout()
         ukladH1.addWidget(self.returnbtn)
@@ -426,12 +434,12 @@ class ResultWindow(BaseWindow):
         self.setLayout(ukladT)
         
     @pyqtSlot()
-    def zamknij(self):
+    def close_window(self):
         self.plotter.close()
         self.close()
         
     @pyqtSlot()
-    def zapisz_i_zamknij(self):
+    def save_and_close_window(self):
         self.save()
         self.plotter.close()
         self.close()
