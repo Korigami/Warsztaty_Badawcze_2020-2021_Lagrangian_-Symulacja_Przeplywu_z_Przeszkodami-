@@ -8,6 +8,20 @@ import pickle
 import pandas as pd
 
 
+class Constants:
+
+    def __init__( 
+        self,
+        gravity,
+        fric_coeff,
+        air_density,
+        wind_vel,
+    ):
+        self.gravity = gravity
+        self.fric_coeff = fric_coeff
+        self.air_density = air_density
+        self.wind_vel = wind_vel
+
 def convert_triangles(
     triangles_v0,
     triangles_v1,
