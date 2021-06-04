@@ -24,9 +24,10 @@ from propagate_particles import *
 # STAŁE PARAMETRY
 # ścieżka do plików z siatkami
 path_to_stl = 'Siatki/'
-stl_files = {'Krolik':path_to_stl+'Stanford_Bunny_sample.stl', 
-             'Kostka Mengera' : path_to_stl+'Menger_sponge_sample.stl',
-             'Kostka': path_to_stl+'Cube_3d_printing_sample.stl'}
+stl_files = {
+            'Krolik':path_to_stl+'Stanford_Bunny_sample.stl', 
+            'Kostka Mengera' : path_to_stl+'Menger_sponge_sample.stl'
+             }
 
 NAZWA_APKI = "Symulacja przepływu z przeszkodami"
 ###################################

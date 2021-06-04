@@ -5,3 +5,9 @@ Krolik,LEFT_RIGHT,1,-1,0.6
 Krolik,RIGHT_LEFT,1,1,0.5
 Krolik,BACK_FRONT,0,-1,0.6
 Krolik,FRONT_BACK,0,1,0.6
+Kostka Mengera,UP_DOWN,2,-1,0.6
+Kostka Mengera,DOWN_UP,2,1,0.6
+Kostka Mengera,LEFT_RIGHT,1,-1,0.6
+Kostka Mengera,RIGHT_LEFT,1,1,0.6
+Kostka Mengera,BACK_FRONT,0,-1,0.6
+Kostka Mengera,FRONT_BACK,0,1,0.6
