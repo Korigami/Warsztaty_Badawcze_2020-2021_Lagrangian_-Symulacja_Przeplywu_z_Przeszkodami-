@@ -15,6 +15,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog
 import pickle
 
 # STAŁE PARAMETRY
+# ścieżka do plików z siatkami
 path_to_stl = '../Siatki/'
 stl_files = {'Krolik':path_to_stl+'Stanford_Bunny_sample.stl', 
              'Kostka Mengera' : path_to_stl+'Menger_sponge_sample.stl',
@@ -166,7 +167,7 @@ class ChooseLoadObjectWindow(BaseWindow):
         ukladT.addWidget(InfoObject, 0, 0)
         
         self.Object = QListWidget(self)
-        self.Object.setGeometry(50, 70, 100, 60)
+        #self.Object.setGeometry(50, 70, 100, 60)
         item1 = QListWidgetItem("Krolik")
         item2 = QListWidgetItem("Kostka")
         item3 = QListWidgetItem("Kostka Mengera")
@@ -231,9 +232,9 @@ class VizualizeWindow(BaseWindow):
         self.interfejs()
         self.show()
 
-    def choose_object(self,ukladT,i,j):
+    def choose_object(self,ukladT):
         InfoObject = QLabel("wybierz obiekt", self)
-        ukladT.addWidget(InfoObject, i,j)
+        ukladT.addWidget(InfoObject, 0,0)
         
         self.Object = QListWidget(self)
         item1 = QListWidgetItem("Krolik")
@@ -242,7 +243,7 @@ class VizualizeWindow(BaseWindow):
         self.Object.addItem(item1)
         self.Object.addItem(item2)
         self.Object.addItem(item3)
-        ukladT.addWidget(self.Object, i+1, j)
+        ukladT.addWidget(self.Object,1,0,1,3)
         
     
     def set_QSpinBox(self,ukladT,message,max_value,min_value,deafult_value,i,j):
@@ -288,28 +289,30 @@ class VizualizeWindow(BaseWindow):
         self.b2.toggled.connect(lambda:self.btnstate(self.b2))
         layout.addWidget(self.b2)
         
-        ukladT.addLayout(layout, i+1, j)
+        ukladT.addLayout(layout,i,j+1)
     
     def interfejs(self):
         ukladT = QGridLayout()
                 
-        self.choose_object(ukladT,0,0)  # Wybór obiektu
-        self.particles_number = self.set_QSpinBox(ukladT,"liczba cząsteczek",1000000,1,1000,2,0)
-        self.number_of_time_periods = self.set_QSpinBox(ukladT,"liczba iteracji",2000,1,100,4,0)
-        self.delta_time = self.set_QSpinBox(ukladT,"krok czasowy (w ms).",1000,10,500,6,0)
-        self.mass = self.set_QDoubleSpinBox(ukladT,"masa cząsteczek",10,-9,5,3,8,0)
-        self.wind = self.set_QDoubleSpinBox(ukladT,"prędkość wiatru",10,-9,5,3,10,0)
-        self.gravity = self.set_QDoubleSpinBox(ukladT,"przyspieszenie grawitacyjne",10,-9,5,3,12,0)
-        self.friction = self.set_QDoubleSpinBox(ukladT,"współczynnik tarcia z powietrzem",10,-9,5,3,14,0)
-        self.cross_area = self.set_QDoubleSpinBox(ukladT,"pole przekroju poprzecznego cząsteczek",10,-9,5,3,16,0)
-        self.choose_if_save(ukladT,18,0) # Czy zapisujemy
+        self.choose_object(ukladT)  # Wybór obiektu
+        self.particles_number = self.set_QSpinBox(ukladT,"liczba cząsteczek",1000000,1,1000,2,0) # liczba cząsteczek
+        self.number_of_time_periods = self.set_QSpinBox(ukladT,"liczba iteracji",2000,1,100,4,0) # liczba kroków czasowych
+        self.delta_time = self.set_QSpinBox(ukladT,"krok czasowy (w ms).",1000,10,500,6,0)# długośc kroków czasowych
+        self.mass = self.set_QDoubleSpinBox(ukladT,"masa cząsteczek",10,-9,5,3,8,0) # masa cząsteczki
+        self.cross_area = self.set_QDoubleSpinBox(ukladT,"pole przekroju poprzecznego cząsteczek",10,-9,5,3,10,0) # pole przekroju cząsteczki
+        self.gravity = self.set_QDoubleSpinBox(ukladT,"przyspieszenie grawitacyjne",10,-9,5,3,2,1) # przyspieszenie grawitacyjne
+        self.friction = self.set_QDoubleSpinBox(ukladT,"współczynnik tarcia z powietrzem",10,-9,5,3,4,1) # współczynnik tarcia
+        self.wind = self.set_QDoubleSpinBox(ukladT,"współrzędna x prędkości wiatru ",10,-9,5,3,6,1) # prędkośc wiatru x
+        self.wind = self.set_QDoubleSpinBox(ukladT,"współrzędna y prędkości wiatru",10,-9,5,3,8,1) # prędkośc wiatru y
+        self.wind = self.set_QDoubleSpinBox(ukladT,"współrzędna z prędkości wiatru",10,-9,5,3,10,1) # prędkośc wiatru z
+        self.choose_if_save(ukladT,12,0) # Czy zapisujemy
         
         ##### Przycisk Ok
         ukladH = QHBoxLayout()
         self.OkBtn = QPushButton("&OK", self)
         self.OkBtn.clicked.connect(self.switch_result_window)
         ukladH.addWidget(self.OkBtn)
-        ukladT.addLayout(ukladH, 20, 0)
+        ukladT.addLayout(ukladH, 13, 0,13,2)
         ########
         
         self.setLayout(ukladT)
@@ -323,7 +326,7 @@ class VizualizeWindow(BaseWindow):
     
     def Calculations(self):
         '''
-            Tutaj pojawia się wywołanie algorytmu
+            Tutaj pojawia się wywołanie algorytmu na podanych przez użytkownika parametrach
         '''
         save = False if self.save == "Nie" else self.save
         particles_number = self.particles_number.value()
@@ -351,7 +354,8 @@ class VizualizeWindow(BaseWindow):
 
 class ResultWindow(BaseWindow):
     '''
-        Okno odpowiadające za wywołanie animacji. Istnieje możliwość zapisania wygenerowanej trajektori do pliku w rozszerzeniu .pkl
+        Okno odpowiadające za wywołanie animacji. 
+        Istnieje możliwość zapisania wygenerowanej trajektori do pliku w rozszerzeniu .pkl
     '''
     def __init__(self, args, parent=None): 
         super().__init__(parent)       
