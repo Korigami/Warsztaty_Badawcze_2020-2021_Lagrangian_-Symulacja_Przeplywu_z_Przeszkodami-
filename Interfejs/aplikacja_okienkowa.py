@@ -316,7 +316,7 @@ class VizualizeWindow(BaseWindow):
     
       
     def Tmp_Simulation(self):
-        with open("test4.pkl", mode ='rb') as f:
+        with open("../PickleSample/test.pkl", mode ='rb') as f:
             Coords = pickle.load(f)
         return Coords
     
