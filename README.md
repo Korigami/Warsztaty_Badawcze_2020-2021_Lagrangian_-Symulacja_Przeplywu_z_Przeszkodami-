@@ -35,4 +35,10 @@ Aby uruchomić aplikację należy
     ```console 
     python3 run.py
     ```
+## Raport
+Raport z opisem działania poszczególnych części projektu dostępny jest w pliku ''raport.pdf''. Można również przejść do niego bezpośrednio przy pomocy <object data="https://github.com/Korigami/Warsztaty_Badawcze_2020-2021_Lagrangian_-Symulacja_Przeplywu_z_Przeszkodami-/blob/main/Raport.pdf" type="application/pdf" width="700px" height="700px">
+    <embed src="https://github.com/Korigami/Warsztaty_Badawcze_2020-2021_Lagrangian_-Symulacja_Przeplywu_z_Przeszkodami-/blob/main/Raport.pdf">
+        <p>This browser does not support PDFs. Please download the PDF to view it: <a href="https://github.com/Korigami/Warsztaty_Badawcze_2020-2021_Lagrangian_-Symulacja_Przeplywu_z_Przeszkodami-/blob/main/Raport.pdf">linku</a>.</p>
+    </embed>
+</object>
 
