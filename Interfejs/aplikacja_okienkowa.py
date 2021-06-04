@@ -346,12 +346,6 @@ class VizualizeWindow(BaseWindow):
         
         self.setLayout(ukladT)
     
-      
-    #def Tmp_Simulation(self):
-    #    with open("../PickleSample/test.pkl", mode ='rb') as f:
-    #        Coords = pickle.load(f)
-    #    return Coords
-    
     
     def Calculations(self):
         '''
