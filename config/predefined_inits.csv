@@ -1,7 +1,7 @@
 name,direction,index,sign,multiplier
-Stanford_Bunny,UP_DOWN,2,-1,0.9
-Stanford_Bunny,DOWN_UP,2,1,0.3
-Stanford_Bunny,LEFT_RIGHT,1,-1,0.6
-Stanford_Bunny,RIGHT_LEFT,1,1,0.5
-Stanford_Bunny,BACK_FRONT,0,-1,0.6
-Stanford_Bunny,FRONT_BACK,0,1,0.6
+Krolik,UP_DOWN,2,-1,0.9
+Krolik,DOWN_UP,2,1,0.3
+Krolik,LEFT_RIGHT,1,-1,0.6
+Krolik,RIGHT_LEFT,1,1,0.5
+Krolik,BACK_FRONT,0,-1,0.6
+Krolik,FRONT_BACK,0,1,0.6

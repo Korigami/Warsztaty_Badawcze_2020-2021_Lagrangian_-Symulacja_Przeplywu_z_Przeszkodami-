@@ -1,12 +1,16 @@
-import octree as ot
 import numpy as np
 from stl import mesh
-import sys
+import sys, os
 
-import pickle
+#import pickle
 
 import pandas as pd
 
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir+"/Octree")
+
+import octree as ot
 
 class Constants:
 
@@ -51,6 +55,8 @@ def convert_triangles(
 
     return converted_triangles
 
+## Chyba nie używane
+'''
 def initiate_particles(
     n_particles,
     pos_0, vel_0, masses, cross_areas,
@@ -69,10 +75,11 @@ def initiate_particles(
             )
 
     return particles
-
+'''
+##
 
 def propagate_particles(
-    filename, # Podawana bez rozszerzenia
+    #filename, # Podawana bez rozszerzenia
     mesh_to_load_name,
     dt, n_time,
     n_part,
@@ -83,7 +90,7 @@ def propagate_particles(
     direction = None,
 ):
     # Ustawienia do siatki 
-    stls = pd.read_csv( '/home/kurowskik/VSCode/Python/octree_parameters.csv')
+    stls = pd.read_csv( 'config/octree_parameters.csv')
     chosen_stl =  stls[ stls["name"] == mesh_to_load_name ].to_dict( orient="records")[0]
 
   
@@ -98,7 +105,7 @@ def propagate_particles(
     maximal_leaf_size = chosen_stl["maximal_leaf_size"]
     maximal_tree_height = chosen_stl["maximal_tree_height"]
 
-    path_to_file = '/home/kurowskik/VSCode/Python/data/' + mesh_to_load_name + '_sample.stl'
+    path_to_file = chosen_stl['path']#'../Siatki/' + mesh_to_load_name + '_sample.stl'
     bunny_mesh = mesh.Mesh.from_file(path_to_file)
 
     bunny_cube = ot.Cube(octree_origin, octree_r)
@@ -120,7 +127,7 @@ def propagate_particles(
     if direction != None:
 
         print("Particles initiation started!")
-        predefined = pd.read_csv( '/home/kurowskik/VSCode/Python/predefined_inits.csv')
+        predefined = pd.read_csv( 'config/predefined_inits.csv')
         predefined_dict =   predefined[  
                 predefined["name"] == mesh_to_load_name 
             ][
@@ -357,8 +364,8 @@ def propagate_particles(
         all_pos[:,t+2,:] = all_pos[:,t+1,:] + vel_0*dt
 
             
-    output = open( filename + '.pkl', 'wb')
-    pickle.dump( all_pos, output)
-    output.close()
+    #output = open( filename + '.pkl', 'wb')
+    #pickle.dump( all_pos, output)
+    #output.close()
 
     return all_pos

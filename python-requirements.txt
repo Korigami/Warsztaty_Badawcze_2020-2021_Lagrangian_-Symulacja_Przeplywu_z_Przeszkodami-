@@ -3,3 +3,5 @@ numpy
 pyvista
 imageio-ffmpeg
 pandas
+numpy-stl
+Cython

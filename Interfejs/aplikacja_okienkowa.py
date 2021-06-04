@@ -4,19 +4,26 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5 import Qt, QtCore, QtGui, QtWidgets
 
-import numpy as np 
-import sys, time
+import numpy as np
+import time
 
 import pyvista as pv
 
-import sys
+import sys, os
 from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog
 
 import pickle
+import sys, os
+
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir+"/PropagateParticles")
+
+from propagate_particles import *
 
 # STAŁE PARAMETRY
 # ścieżka do plików z siatkami
-path_to_stl = '../Siatki/'
+path_to_stl = 'Siatki/'
 stl_files = {'Krolik':path_to_stl+'Stanford_Bunny_sample.stl', 
              'Kostka Mengera' : path_to_stl+'Menger_sponge_sample.stl',
              'Kostka': path_to_stl+'Cube_3d_printing_sample.stl'}
@@ -37,7 +44,7 @@ class BaseWindow(QWidget):
 
     def center(self):
         '''
-        Funkcja wyświetlająca okno aplikacji w centrum aktywnie używanego ekranu
+            Funkcja wyświetlająca okno aplikacji w centrum aktywnie używanego ekranu
         '''
         frameGm = self.frameGeometry()
         screen = PyQt5.QtWidgets.QApplication.desktop().screenNumber(PyQt5.QtWidgets.QApplication.desktop().cursor().pos())
@@ -153,7 +160,7 @@ class ChooseLoadObjectWindow(BaseWindow):
     def Load(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        filename, _ = QFileDialog.getOpenFileName(self,"Wybierz pickla do wczytania","../PickleSample","(*.pkl)", options=options)
+        filename, _ = QFileDialog.getOpenFileName(self,"Wybierz pickla do wczytania","PickleSample","(*.pkl)", options=options)
         if filename:
             with open(filename, mode ='rb') as f:
                 Coords = pickle.load(f)
@@ -245,24 +252,24 @@ class VizualizeWindow(BaseWindow):
         self.Object.addItem(item3)
         ukladT.addWidget(self.Object,1,0)
     
-    def choose_scenario(self,ukladT):
-        InfoScenario = QLabel("wybierz scenariusz", self)
-        ukladT.addWidget(InfoScenario, 0,1)
+    def choose_direction(self,ukladT):
+        InfoDirection = QLabel("wybierz scenariusz", self)
+        ukladT.addWidget(InfoDirection, 0,1)
         
-        self.Scenario = QListWidget(self)
+        self.Direction = QListWidget(self)
         item1 = QListWidgetItem("UP_DOWN")
         item2 = QListWidgetItem("DOWN_UP")
         item3 = QListWidgetItem("LEFT_RIGHT")
         item4 = QListWidgetItem("RIGHT_LEFT")
         item5 = QListWidgetItem("FRONT_BACK")
         item6 = QListWidgetItem("BACK_FRONT")
-        self.Scenario.addItem(item1)
-        self.Scenario.addItem(item2)
-        self.Scenario.addItem(item3)
-        self.Scenario.addItem(item4)
-        self.Scenario.addItem(item5)
-        self.Scenario.addItem(item6)
-        ukladT.addWidget(self.Scenario,1,1)    
+        self.Direction.addItem(item1)
+        self.Direction.addItem(item2)
+        self.Direction.addItem(item3)
+        self.Direction.addItem(item4)
+        self.Direction.addItem(item5)
+        self.Direction.addItem(item6)
+        ukladT.addWidget(self.Direction,1,1)    
     
     
     def set_QSpinBox(self,ukladT,message,max_value,min_value,deafult_value,i,j):
@@ -314,10 +321,10 @@ class VizualizeWindow(BaseWindow):
         ukladT = QGridLayout()
                 
         self.choose_object(ukladT)  # Wybór obiektu
-        self.choose_scenario(ukladT)
+        self.choose_direction(ukladT)
         self.particles_number = self.set_QSpinBox(ukladT,"liczba cząsteczek",1000000,1,1000,2,0) # liczba cząsteczek
         self.number_of_time_periods = self.set_QSpinBox(ukladT,"liczba iteracji",10000,1,2000,4,0) # liczba kroków czasowych
-        self.delta_time = self.set_QSpinBox(ukladT,"krok czasowy (w ms).",1000,1,200,6,0)# długośc kroków czasowych
+        self.delta_time = self.set_QSpinBox(ukladT,"krok czasowy (w ms).",1000,1,10,6,0)# długośc kroków czasowych
         self.mass = self.set_QDoubleSpinBox(ukladT,"masa cząsteczek (kg)",1,0,0.1,3,8,0) # masa cząsteczki
         self.cross_area = self.set_QDoubleSpinBox(ukladT,"pole przekroju poprzecznego cząsteczek",1,0.001,0.01,3,10,0) # pole przekroju cząsteczki
         self.speed = self.set_QDoubleSpinBox(ukladT,"szybkość cząsteczek",20,0,7,3,12,0) # szybkość cząsteczek
@@ -332,7 +339,6 @@ class VizualizeWindow(BaseWindow):
         
         
         self.choose_if_save(ukladT,14,0) # Czy zapisujemy
-        
         ##### Przycisk Ok
         ukladH = QHBoxLayout()
         self.OkBtn = QPushButton("&OK", self)
@@ -358,7 +364,7 @@ class VizualizeWindow(BaseWindow):
         particles_number = self.particles_number.value()
         number_of_time_periods = self.number_of_time_periods.value()
         Object = self.Object.currentItem().text()
-        Scenario = self.Scenario.currentItem().text()
+        Direction = self.Direction.currentItem().text()
         delta_time = self.delta_time.value()
         mass = self.mass.value()
         gravity = self.gravity.value()
@@ -370,7 +376,24 @@ class VizualizeWindow(BaseWindow):
         air_density = self.air_density.value()
         speed = self.speed.value()
         #### Tutaj wyznaczanie coords
-        Coords = self.Tmp_Simulation()
+        Coords = propagate_particles(
+            Object,
+            delta_time/1000,
+            number_of_time_periods,
+            particles_number,
+            None,
+            None,
+            np.array([mass]*particles_number),
+            np.array([cross_area]*particles_number),
+            Constants(
+                np.array([0,0,-gravity]),
+                friction,
+                air_density,
+                np.array([wind_x,wind_y,wind_z])
+                ),
+            speed,
+            n_triangles = 0,
+            direction = Direction)
         ####
         
         return number_of_time_periods, Object, Coords, save
@@ -405,7 +428,7 @@ class ResultWindow(BaseWindow):
                         
     def animate(self,number_of_time_periods, Coords, save, movie_name = None):
         if save == "avi":
-            self.plotter.open_movie(f"{movie_name}.avi",framerate = 30)
+            self.plotter.open_movie(f"{movie_name}.avi",framerate = 10)
         for j in range(number_of_time_periods):
             #start_time = time.time()
             self.single_animation(j, Coords)
@@ -417,7 +440,7 @@ class ResultWindow(BaseWindow):
     def save(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        filename, _ = QFileDialog.getSaveFileName(self,"Zapis ruchu cząsteczek","../PickleSample"," (*.pkl)", options=options)
+        filename, _ = QFileDialog.getSaveFileName(self,"Zapis ruchu cząsteczek","PickleSample"," (*.pkl)", options=options)
         if filename:
             if filename[-3:] != "pkl":
                 filename+=".pkl"
@@ -444,7 +467,7 @@ class ResultWindow(BaseWindow):
         if save:
             options = QFileDialog.Options()
             options |= QFileDialog.DontUseNativeDialog
-            movie_name, _ = QFileDialog.getSaveFileName(self,"Zapisywanie filmu","../MovieSample",f" (*.{save})", options=options)
+            movie_name, _ = QFileDialog.getSaveFileName(self,"Zapisywanie filmu","MovieSample",f" (*.{save})", options=options)
             self.animate(number_of_time_periods,
                     self.Coords, 
                     save,
