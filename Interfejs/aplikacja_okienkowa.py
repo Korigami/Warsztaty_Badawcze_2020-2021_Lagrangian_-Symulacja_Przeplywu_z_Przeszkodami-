@@ -243,8 +243,27 @@ class VizualizeWindow(BaseWindow):
         self.Object.addItem(item1)
         self.Object.addItem(item2)
         self.Object.addItem(item3)
-        ukladT.addWidget(self.Object,1,0,1,3)
+        ukladT.addWidget(self.Object,1,0)
+    
+    def choose_scenario(self,ukladT):
+        InfoScenario = QLabel("wybierz scenariusz", self)
+        ukladT.addWidget(InfoScenario, 0,1)
         
+        self.Scenario = QListWidget(self)
+        item1 = QListWidgetItem("UP_DOWN")
+        item2 = QListWidgetItem("DOWN_UP")
+        item3 = QListWidgetItem("LEFT_RIGHT")
+        item4 = QListWidgetItem("RIGHT_LEFT")
+        item5 = QListWidgetItem("FRONT_BACK")
+        item6 = QListWidgetItem("BACK_FRONT")
+        self.Scenario.addItem(item1)
+        self.Scenario.addItem(item2)
+        self.Scenario.addItem(item3)
+        self.Scenario.addItem(item4)
+        self.Scenario.addItem(item5)
+        self.Scenario.addItem(item6)
+        ukladT.addWidget(self.Scenario,1,1)    
+    
     
     def set_QSpinBox(self,ukladT,message,max_value,min_value,deafult_value,i,j):
         Info= QLabel(message, self)
@@ -290,38 +309,45 @@ class VizualizeWindow(BaseWindow):
         layout.addWidget(self.b2)
         
         ukladT.addLayout(layout,i,j+1)
-    
+        
     def interfejs(self):
         ukladT = QGridLayout()
                 
         self.choose_object(ukladT)  # Wybór obiektu
+        self.choose_scenario(ukladT)
         self.particles_number = self.set_QSpinBox(ukladT,"liczba cząsteczek",1000000,1,1000,2,0) # liczba cząsteczek
-        self.number_of_time_periods = self.set_QSpinBox(ukladT,"liczba iteracji",2000,1,100,4,0) # liczba kroków czasowych
-        self.delta_time = self.set_QSpinBox(ukladT,"krok czasowy (w ms).",1000,10,500,6,0)# długośc kroków czasowych
-        self.mass = self.set_QDoubleSpinBox(ukladT,"masa cząsteczek",10,-9,5,3,8,0) # masa cząsteczki
-        self.cross_area = self.set_QDoubleSpinBox(ukladT,"pole przekroju poprzecznego cząsteczek",10,-9,5,3,10,0) # pole przekroju cząsteczki
-        self.gravity = self.set_QDoubleSpinBox(ukladT,"przyspieszenie grawitacyjne",10,-9,5,3,2,1) # przyspieszenie grawitacyjne
-        self.friction = self.set_QDoubleSpinBox(ukladT,"współczynnik tarcia z powietrzem",10,-9,5,3,4,1) # współczynnik tarcia
-        self.wind = self.set_QDoubleSpinBox(ukladT,"współrzędna x prędkości wiatru ",10,-9,5,3,6,1) # prędkośc wiatru x
-        self.wind = self.set_QDoubleSpinBox(ukladT,"współrzędna y prędkości wiatru",10,-9,5,3,8,1) # prędkośc wiatru y
-        self.wind = self.set_QDoubleSpinBox(ukladT,"współrzędna z prędkości wiatru",10,-9,5,3,10,1) # prędkośc wiatru z
-        self.choose_if_save(ukladT,12,0) # Czy zapisujemy
+        self.number_of_time_periods = self.set_QSpinBox(ukladT,"liczba iteracji",10000,1,2000,4,0) # liczba kroków czasowych
+        self.delta_time = self.set_QSpinBox(ukladT,"krok czasowy (w ms).",1000,1,200,6,0)# długośc kroków czasowych
+        self.mass = self.set_QDoubleSpinBox(ukladT,"masa cząsteczek (kg)",1,0,0.1,3,8,0) # masa cząsteczki
+        self.cross_area = self.set_QDoubleSpinBox(ukladT,"pole przekroju poprzecznego cząsteczek",1,0.001,0.01,3,10,0) # pole przekroju cząsteczki
+        self.speed = self.set_QDoubleSpinBox(ukladT,"szybkość cząsteczek",20,0,7,3,12,0) # szybkość cząsteczek
+        
+        self.gravity = self.set_QDoubleSpinBox(ukladT,"przyspieszenie grawitacyjne",20,-20,9.81,3,2,1) # przyspieszenie grawitacyjne
+        self.friction = self.set_QDoubleSpinBox(ukladT,"współczynnik tarcia z powietrzem",1,0.001,0.04,3,4,1) # współczynnik tarcia
+        self.wind_x = self.set_QDoubleSpinBox(ukladT,"współrzędna x prędkości wiatru ",20,-20,5,2,6,1) # prędkośc wiatru x
+        self.wind_y = self.set_QDoubleSpinBox(ukladT,"współrzędna y prędkości wiatru",20,-20,10,2,8,1) # prędkośc wiatru y
+        self.wind_z = self.set_QDoubleSpinBox(ukladT,"współrzędna z prędkości wiatru",20,-20,10,2,10,1) # prędkośc wiatru z
+        self.air_density = self.set_QDoubleSpinBox(ukladT,"gęstość powietrza",1,0.001,0.02,3,12,1) # gęstość powietrza
+    
+        
+        
+        self.choose_if_save(ukladT,14,0) # Czy zapisujemy
         
         ##### Przycisk Ok
         ukladH = QHBoxLayout()
         self.OkBtn = QPushButton("&OK", self)
         self.OkBtn.clicked.connect(self.switch_result_window)
         ukladH.addWidget(self.OkBtn)
-        ukladT.addLayout(ukladH, 13, 0,13,2)
+        ukladT.addLayout(ukladH, 15, 0,15,2)
         ########
         
         self.setLayout(ukladT)
     
       
-    def Tmp_Simulation(self):
-        with open("../PickleSample/test.pkl", mode ='rb') as f:
-            Coords = pickle.load(f)
-        return Coords
+    #def Tmp_Simulation(self):
+    #    with open("../PickleSample/test.pkl", mode ='rb') as f:
+    #        Coords = pickle.load(f)
+    #    return Coords
     
     
     def Calculations(self):
@@ -332,12 +358,17 @@ class VizualizeWindow(BaseWindow):
         particles_number = self.particles_number.value()
         number_of_time_periods = self.number_of_time_periods.value()
         Object = self.Object.currentItem().text()
+        Scenario = self.Scenario.currentItem().text()
         delta_time = self.delta_time.value()
         mass = self.mass.value()
         gravity = self.gravity.value()
-        wind = self.wind.value()
+        wind_x = self.wind_x.value()
+        wind_y = self.wind_y.value()
+        wind_z = self.wind_z.value()
         friction = self.friction.value()
         cross_area = self.cross_area.value()
+        air_density = self.air_density.value()
+        speed = self.speed.value()
         #### Tutaj wyznaczanie coords
         Coords = self.Tmp_Simulation()
         ####
