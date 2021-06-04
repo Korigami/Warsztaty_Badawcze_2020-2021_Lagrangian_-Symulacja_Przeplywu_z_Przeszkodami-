@@ -13,7 +13,7 @@ Przed uruchomieniem aplikacji należy przygotować środowisko. Ze względu na u
     
     ```console
     python3 -m venv venv
-    venv/scripts/activate.bat
+    venv/Scripts/activate.bat
     python3 -m pip install -r python-requirements.txt
     ```
 Aby móc stworzyć wirtualne środowisko należy zaistalować odpowiednie pakiety. Można wykorzystać:
