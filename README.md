@@ -38,7 +38,7 @@ Aby uruchomić aplikację należy
 ## Raport
  <object data="https://github.com/Korigami/Warsztaty_Badawcze_2020-2021_Lagrangian_-Symulacja_Przeplywu_z_Przeszkodami-/blob/main/Raport.pdf" type="application/pdf" width="700px" height="700px">
     <embed src="https://github.com/Korigami/Warsztaty_Badawcze_2020-2021_Lagrangian_-Symulacja_Przeplywu_z_Przeszkodami-/blob/main/Raport.pdf">
-        <p>Raport z opisem działania poszczególnych części projektu dostępny jest w pliku <em>Raport.pdf</em>. Można również przejść do niego bezpośrednio klikając <a href="https://github.com/Korigami/Warsztaty_Badawcze_2020-2021_Lagrangian_-Symulacja_Przeplywu_z_Przeszkodami-/blob/main/Raport.pdf">tutaj</a>.</p>
+        <p>Raport z opisem działania poszczególnych części projektu dostępny jest w pliku <em>Raport.pdf</em>. Można również przejść do niego klikając <a href="https://github.com/Korigami/Warsztaty_Badawcze_2020-2021_Lagrangian_-Symulacja_Przeplywu_z_Przeszkodami-/blob/main/Raport.pdf">tutaj</a>.</p>
     </embed>
 </object>
 
