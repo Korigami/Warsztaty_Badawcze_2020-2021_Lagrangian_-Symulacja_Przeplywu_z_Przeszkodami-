@@ -244,10 +244,8 @@ class VizualizeWindow(BaseWindow):
         
         self.Object = QListWidget(self)
         item1 = QListWidgetItem("Krolik")
-        item2 = QListWidgetItem("Kostka")
         item3 = QListWidgetItem("Kostka Mengera")
         self.Object.addItem(item1)
-        self.Object.addItem(item2)
         self.Object.addItem(item3)
         ukladT.addWidget(self.Object,1,0)
     
