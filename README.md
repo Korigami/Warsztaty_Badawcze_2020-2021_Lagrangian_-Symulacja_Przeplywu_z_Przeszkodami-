@@ -1,4 +1,4 @@
-# Warsztaty_Badawcze_2020-2021_Lagrangian
+# Warsztaty_Badawcze_2020-2021_Lagrangian_-Symulacja_Przeplywu_z_Przeszkodami-
 
 ## Przygotowanie środowiska
 Przed uruchomieniem aplikacji należy przygotować środowisko. Ze względu na używane w kodzie paczki należy zainstalować moduły znajdujące się w pliku **python-requirements.txt**. W tym celu można wykorzystać 
