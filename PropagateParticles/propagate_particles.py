@@ -55,31 +55,7 @@ def convert_triangles(
 
     return converted_triangles
 
-## Chyba nie używane
-'''
-def initiate_particles(
-    n_particles,
-    pos_0, vel_0, masses, cross_areas,
-    dt
-):
-    particles = [ Particle() ] * n_particles
-
-    for p in range( n_particles):
-        particles[p] = \
-            Particle(
-                pos_0[p],
-                pos_0[p] + vel_0[p] * dt,
-                vel_0[p],
-                masses[p],
-                cross_areas[p]
-            )
-
-    return particles
-'''
-##
-
 def propagate_particles(
-    #filename, # Podawana bez rozszerzenia
     mesh_to_load_name,
     dt, n_time,
     n_part,
